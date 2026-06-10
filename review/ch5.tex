@@ -40,10 +40,26 @@ $\E\,e^U=\int_0^1 e^u\cdot1\,\d u$，恰好就是我们要的积分。
 \hat I=\frac1n\sum_{i=1}^n e^{U_i}\ \longrightarrow\ I .
 \]
 这就是\textbf{平均值法}，最朴素的蒙特卡洛。它的误差有多大？
-由中心极限定理，$\hat I$ 的标准差是
+$\hat I$ 的标准差是（推导见下面的"人话解读"）
 \[
 \sqrt{\Var(\hat I)}=\frac{\sigma}{\sqrt n},\qquad \sigma^2=\Var(e^U)\approx0.2420 .
 \]
+
+\begin{pbox}
+$\sigma/\sqrt n$ 是怎么来的？只用三条数理统计的基本性质（不熟请回第 0 章补）。
+记 $X_i=e^{U_i}$，独立同分布，$\E X_i=I$，$\Var X_i=\sigma^2$：
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{期望可加}：$\E\hat I=\frac1n(\E X_1+\cdots+\E X_n)=\frac1n\cdot nI=I$
+  ——$\hat I$ 平均而言正中真值（无偏）；
+  \item \textbf{独立时方差可加 + 常数平方提出}：$\Var(X_1+\cdots+X_n)=n\sigma^2$，
+  且 $\Var(cX)=c^2\Var X$，故
+  $\Var\hat I=\frac1{n^2}\cdot n\sigma^2=\frac{\sigma^2}{n}$；
+  \item \textbf{标准差 $=$ 方差开根号}：$\mathrm{sd}(\hat I)=\sigma/\sqrt n$。
+\end{enumerate}
+直觉：一个人测量误差是 $\sigma$，$n$ 个人独立测再取平均，误差\textbf{不是}变成
+$\sigma/n$，而是 $\sigma/\sqrt n$——各人误差方向随机，只能部分抵消，
+所以摊薄得比想象中慢。这也解释了为什么"硬加样本"性价比低。
+\end{pbox}
 
 \begin{pbox}
 $\sigma/\sqrt n$ 这个式子是全章的"敌人"，盯住它看：
