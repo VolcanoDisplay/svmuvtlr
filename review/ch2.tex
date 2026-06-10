@@ -33,6 +33,14 @@ J=\det\Big(\frac{\partial x_i}{\partial y_j}\Big),
 所以只要把 $\Sigma$ 分解成 $LL^T$（\textbf{Cholesky 分解}，$L$ 为下三角矩阵），
 再抽独立标准正态向量 $\bm Z$，线性组合一下就完工。
 
+\begin{pbox}
+类比一维：一维里我们用 $X=\mu+\sigma Z$ 把标准正态"平移+拉伸"成任意正态；
+多维里 $L$ 就是 $\sigma$ 的矩阵版——Cholesky 分解 $\Sigma=LL^T$ 相当于给协方差矩阵"开平方"。
+二维考试只需要背一个结果：$\eta_2=\mu_2+\sigma_2(\rho\,\xi_1+\sqrt{1-\rho^2}\,\xi_2)$。
+看结构：$\rho$ 那份是"拄着 $\xi_1$ 的部分"（制造相关），$\sqrt{1-\rho^2}$ 那份是自己的
+"新鲜随机性"，两者平方和为 1，保证总方差不变。
+\end{pbox}
+
 \begin{ebox}{生成 $N_p(\bm\mu,\Sigma)$ 的变换法}
 \begin{enumerate}[leftmargin=2em]
   \item 对 $\Sigma$ 做 Cholesky 分解 $\Sigma=LL^T$；
@@ -89,6 +97,14 @@ $\Sigma=\begin{pmatrix}\Sigma_{11}&\Sigma_{12}\\\Sigma_{21}&\Sigma_{22}\end{pmat
 \[
 \bm X_2\mid\bm X_1=\bm x_1\ \sim\ N\big(\bm\mu_2+\Sigma_{21}\Sigma_{11}^{-1}(\bm x_1-\bm\mu_1),\ \ \Sigma_{22}-\Sigma_{21}\Sigma_{11}^{-1}\Sigma_{12}\big).
 \]
+
+\begin{pbox}
+用"身高体重"记二维版：已知一个人身高 $x_1$，猜他体重。
+猜测中心不再是全人群平均 $\mu_2$，而要按身高偏高/偏矮的程度修正：
+$\mu_2+\rho\frac{\sigma_2}{\sigma_1}(x_1-\mu_1)$（身高越高、相关越强，修正越多）；
+同时因为知道了身高，不确定性变小：方差从 $\sigma_2^2$ 缩到 $\sigma_2^2(1-\rho^2)$。
+记住这两句话，公式就背下来了。
+\end{pbox}
 
 \begin{exbox}[条件分布法生成二维正态]
 用条件分布法生成 $N_2(\bm\mu,\Sigma)$（参数同上例：$\sigma_1=\sigma_2=2,\rho=0.8,\bm\mu=\bm0$）。

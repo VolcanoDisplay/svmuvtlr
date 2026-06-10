@@ -28,6 +28,12 @@ F(x)=\Pr(X\le x),
 \]
 它回答"取值不超过 $x$ 的概率是多少"。$F$ 单调不减、右连续，从 0 升到 1。
 
+\begin{pbox}
+把 $X$ 的所有可能取值想成一条数轴上撒的"概率沙子"，总共 1 公斤。
+$F(x)$ 就是"从最左边扫到 $x$ 为止，一共扫起了多少沙子"。
+密度 $f(x)$ 则是"$x$ 这个位置沙子堆得多高"——堆得高的地方，随机数就容易落在那附近。
+\end{pbox}
+
 \begin{itemize}[leftmargin=2em]
   \item 连续型随机变量还有\textbf{密度函数（pdf）} $f(x)=F'(x)$。注意密度本身不是概率，
   $f(x)\Delta x\approx\Pr(x<X\le x+\Delta x)$ 才是——密度大的地方，取值"扎堆"。
@@ -145,6 +151,12 @@ $\frac{\chi^2(m)/m}{\chi^2(n)/n}\sim F(m,n)$。
 \mathrm{MSE}(\hat\theta)=\E(\hat\theta-\theta)^2=\mathrm{Bias}^2+\Var(\hat\theta)
 \quad(\text{"准不准"}+\text{"稳不稳"}).
 \]
+
+\begin{pbox}
+打靶类比：偏差 Bias 是"瞄准点偏离靶心多远"（系统性偏差），
+方差 Var 是"弹着点散布多大"（手抖程度）。MSE 把两者合成一个总分：
+又瞄得正、又打得稳，才是好估计。
+\end{pbox}
 
 \textbf{置信区间}：给出一个随机区间，让它以 $1-\alpha$ 的概率罩住真参数。
 套路是找\textbf{枢轴量}——一个含 $\theta$ 但分布完全已知的量（如 $\frac{\bar X-\mu}{S/\sqrt n}\sim t(n-1)$），

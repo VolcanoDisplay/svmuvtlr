@@ -19,6 +19,14 @@ Efron（1979）的天才想法：既然不知道总体 $F$，就用\textbf{经�
 \end{itemize}
 \end{kbox}
 
+\begin{pbox}
+抽奖箱类比：把手里的 $n$ 个数据写在 $n$ 张纸条上扔进箱子。
+每次"重复实验"就是：从箱里摸一张、记下数字、\textbf{放回去}、再摸……共摸 $n$ 次。
+所以同一个数据可能被抽到好几次、有的一次没抽到——这很正常，不是错误。
+每摸完一轮算一个 $\hat\theta^*$，重复 $B$ 轮，看这 $B$ 个值抖得多厉害，
+就知道 $\hat\theta$ 有多不靠谱。
+\end{pbox}
+
 \subsection{Bootstrap 估计标准误与偏差}
 
 \begin{ebox}{核心算法（必背）}
@@ -41,6 +49,13 @@ Efron（1979）的天才想法：既然不知道总体 $F$，就用\textbf{经�
 Bootstrap 世界里把 $F_n$ 当总体，其"真值"就是 $\hat\theta$，
 "样本上的估计"就是 $\hat\theta^*$，于是偏差被模拟为 $\bar\theta^*-\hat\theta$。
 \textbf{记忆口诀：Bootstrap 世界整体往下平移一层}（$F\to F_n$，$\theta\to\hat\theta$，$\hat\theta\to\hat\theta^*$）。
+
+\begin{pbox}
+平移对照表（考试直接套）：真实世界里"总体→样本→估计值"，
+Bootstrap 世界里对应"原样本→重抽样本→$\hat\theta^*$"。
+你想知道哪个量（比如 $\hat\theta-\theta$ 的分布），就把里面每个符号各降一级
+（变成 $\hat\theta^*-\hat\theta$），后者能用计算机算出一大堆，拿它冒充前者。
+\end{pbox}
 
 \begin{exbox}[小数据 Bootstrap 手算]
 样本为 $\{1,2,6\}$，估计量为样本均值 $\hat\theta=\bar x=3$。

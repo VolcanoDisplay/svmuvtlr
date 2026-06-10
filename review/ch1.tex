@@ -30,6 +30,14 @@
 \end{enumerate}
 \end{kbox}
 
+\begin{pbox}
+不用被定理吓到，它只说了两件事：
+（1）把任何随机数塞进它自己的分布函数里，出来的是 0 到 1 的均匀数；
+（2）反过来，把均匀数塞进反函数 $F^{-1}$，出来的就是目标分布的随机数。
+考试用法永远是三步：密度积分得 $F$ → 解方程 $u=F(x)$ 把 $x$ 解出来 →
+写"产生 $u$，输出 $x=\cdots$"。
+\end{pbox}
+
 \begin{proof}
 (1) 记 $G(u)=\Pr(F(\eta)\le u)$。当 $u\in[0,1]$ 时，由 $F$ 严格单调，
 \[
@@ -104,6 +112,14 @@ $p(x)\le Mf(x)$。然后在 $Mf$ 的"大帐篷"下面均匀撒点，
 所以 $M$ 要尽量小，最优取 $M=\sup_x p(x)/f(x)$（通常求导找最大值）。
 \end{ebox}
 
+\begin{pbox}
+把目标密度 $p$ 想成一座山，把 $Mf$ 想成罩在山上的一顶"帐篷"（必须完全罩住，
+不能露出山头）。在帐篷下随机撒雨点：落在山体里的留下，落在山体和帐篷之间的扔掉。
+留下的点的横坐标自动服从 $p$：山高的地方留点多、山矮的地方留点少。
+帐篷贴得越紧（$M$ 越小），白扔的点越少，效率越高。算法里的 $u\le h(y)$
+就是在问："这滴雨落在山体里了吗？"
+\end{pbox}
+
 \begin{exbox}[Beta 分布的舍选法]
 设计算法生成 $\mathrm{Beta}(2,2)$，密度 $p(x)=6x(1-x),\ 0<x<1$。求最小的 $M$ 与平均接受概率。
 \end{exbox}
@@ -176,6 +192,8 @@ $M=\frac{p(\alpha)}{f(\alpha)}=\frac{\alpha^{\alpha}e^{-(\alpha-1)}}{\Gamma(\alp
   Z_1=\sqrt{-2\ln U_1}\cos(2\pi U_2),\qquad Z_2=\sqrt{-2\ln U_1}\sin(2\pi U_2)
   \]
   是\textbf{独立}的 $N(0,1)$ 随机数对（极坐标变换+Jacobi 可证）。再做 $X=\mu+\sigma Z$ 得任意正态。
+  记忆：$\sqrt{-2\ln U_1}$ 是"离原点多远"（半径），$2\pi U_2$ 是"朝哪个方向"（角度），
+  随机半径配随机角度，打出去就是二维正态的一个点，横纵坐标各是一个独立标准正态。
   \item \textbf{卡方}：$Z_1,\dots,Z_n\overset{iid}{\sim}N(0,1)\Rightarrow\sum Z_i^2\sim\chi^2(n)$。
   \item \textbf{Gamma 尺度}：$\xi\sim\mathrm{Gamma}(\alpha,\gamma)\Rightarrow\xi/a\sim\mathrm{Gamma}(\alpha,a\gamma)$。
   \item \textbf{对数正态}：$e^{N(\mu,\sigma^2)}\sim\mathrm{LogNormal}$；

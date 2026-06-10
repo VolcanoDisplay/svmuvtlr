@@ -13,6 +13,8 @@
 \newtcolorbox{exbox}[1][]{colback=orange!5,colframe=orange!75!black,breakable,
   title={\refstepcounter{exm}例题 \thesection.\theexm\quad #1},fonttitle=\bfseries}
 \newenvironment{sol}{\par\noindent\textbf{【解】}}{\par}
+\newtcolorbox{pbox}{colback=gray!8,colframe=gray!60!black,breakable,
+  title={人话解读},fonttitle=\bfseries,left=2mm,right=2mm,top=1mm,bottom=1mm}
 
 \newtheorem{thm}{定理}[section]
 \newtheorem{defn}[thm]{定义}
@@ -31,6 +33,7 @@
 
 \begin{document}
 \maketitle
+\input{guide}
 \tableofcontents
 \newpage
 
