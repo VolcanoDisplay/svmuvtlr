@@ -1,104 +1,163 @@
 \section{第2章\quad 随机向量随机数的抽样方法}
 
-\subsection{总览}
+\subsection{故事：从一维到多维，难在"相关"}
 
-把第 1 章的思想推广到多维：生成服从联合分布
-$f(x_1,\dots,x_p)$ 的随机向量。三种方法：\textbf{变换法、条件分布法、舍选法}；
-离散随机向量用\textbf{条件分布法}（典型：多项分布）。
+第 1 章我们学会了造一维随机数。多维呢？如果各分量\textbf{独立}，那太简单了——
+每个分量单独抽就行。真正的麻烦在于分量之间\textbf{有相关性}：
+比如身高和体重是正相关的，不能各抽各的。
+本章三种思路对付相关性：
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{变换法}：从独立分量出发，做一个线性（或非线性）变换"注入"相关性；
+  \item \textbf{条件分布法}：一个一个分量地抽，后抽的"看着"先抽的来（链式法则）；
+  \item \textbf{舍选法}：一维舍选的多维翻版。
+\end{itemize}
 
-\subsection{变换抽样法（含 Jacobi 行列式）}
+\subsection{变换抽样法}
 
-\begin{kbox}{密度变换公式（基础铺垫）}
-设 $p$ 维随机向量 $\bm\xi=(\xi_1,\dots,\xi_p)$ 有密度 $f(x_1,\dots,x_p)$，
-作可逆变换 $\bm\eta=g(\bm\xi)$，逆变换 $\bm\xi=g^{-1}(\bm\eta)$，则 $\bm\eta$ 的密度为
+\paragraph{基础铺垫：多维密度变换公式。}
+设 $p$ 维随机向量 $\bm\xi$ 有密度 $f(x_1,\dots,x_p)$，作可逆变换 $\bm\eta=g(\bm\xi)$，则 $\bm\eta$ 的密度为
 \[
-p(\bm y)=f\big(g^{-1}(\bm y)\big)\cdot\big|J\big| ,\qquad
-J=\det\!\left(\frac{\partial x_i}{\partial y_j}\right)
+p(\bm y)=f\big(g^{-1}(\bm y)\big)\cdot|J| ,\qquad
+J=\det\Big(\frac{\partial x_i}{\partial y_j}\Big),
 \]
-即"原密度 $\times$ 逆变换的 Jacobi 行列式绝对值"。
-\end{kbox}
+即"原密度 $\times$ 逆变换 Jacobi 行列式的绝对值"。
+直觉：变换会拉伸/压缩空间，$|J|$ 是体积缩放因子，密度要按它折算才能保证总概率为 1。
+（一维的 $p_Y(y)=p_X(x)\big|\frac{\d x}{\d y}\big|$ 就是它的特例；Box--Muller 的正确性也由它证明。）
 
-\textbf{核心例子：二维正态 $N_2(\bm\mu,\Sigma)$ 的生成。}
-设 $\xi_1,\xi_2\overset{iid}{\sim}N(0,1)$，记
+\paragraph{主角：多维正态。}
+多维正态 $N_p(\bm\mu,\Sigma)$ 是统计中最重要的多维分布，它有个极好的性质：
+\textbf{独立标准正态的线性变换仍是正态}，且均值协方差变换规律简单：
 \[
-\bm\mu=\begin{pmatrix}\mu_1\\\mu_2\end{pmatrix},\quad
-\Sigma=\begin{pmatrix}\sigma_1^2 & \rho\sigma_1\sigma_2\\ \rho\sigma_1\sigma_2 & \sigma_2^2\end{pmatrix}.
+\bm X=\bm\mu+L\bm Z\ \Longrightarrow\ \bm X\sim N_p(\bm\mu,\ LL^{T}).
 \]
-令
+所以只要把 $\Sigma$ 分解成 $LL^T$（\textbf{Cholesky 分解}，$L$ 为下三角矩阵），
+再抽独立标准正态向量 $\bm Z$，线性组合一下就完工。
+
+\begin{ebox}{生成 $N_p(\bm\mu,\Sigma)$ 的变换法}
+\begin{enumerate}[leftmargin=2em]
+  \item 对 $\Sigma$ 做 Cholesky 分解 $\Sigma=LL^T$；
+  \item 用 Box--Muller 生成独立 $Z_1,\dots,Z_p\sim N(0,1)$；
+  \item 输出 $\bm X=\bm\mu+L\bm Z$。
+\end{enumerate}
+正确性：$\Cov(\bm X)=L\,\Cov(\bm Z)\,L^T=L I L^T=\Sigma$。
+\end{ebox}
+
+\begin{exbox}[二维正态的变换法（课件原题）]
+生成 $N_2(\bm\mu,\Sigma)$，其中 $\mu_1=\mu_2=0$，$\sigma_1=\sigma_2=2$，$\rho=0.8$。
+写出变换公式并验证。
+\end{exbox}
+\begin{sol}
+二维情形的"手工 Cholesky"是必背公式：取独立 $\xi_1,\xi_2\sim N(0,1)$，令
 \[
 \eta_1=\mu_1+\sigma_1\xi_1,\qquad
-\eta_2=\mu_2+\sigma_2\big(\rho\,\xi_1+\sqrt{1-\rho^2}\,\xi_2\big),
+\eta_2=\mu_2+\sigma_2\big(\rho\,\xi_1+\sqrt{1-\rho^2}\,\xi_2\big).
 \]
-则 $(\eta_1,\eta_2)\sim N_2(\bm\mu,\Sigma)$。
-（验证：$\E\eta_i=\mu_i$，$\Var\eta_i=\sigma_i^2$，
-$\Cov(\eta_1,\eta_2)=\sigma_1\sigma_2\rho$，且线性组合保持正态。）
-
-\textbf{一般 $p$ 维正态}：求 $\Sigma$ 的 Cholesky 分解 $\Sigma=LL^{T}$（$L$ 下三角），
-取 $\bm Z=(Z_1,\dots,Z_p)^T$ 为独立标准正态，则
+代入数值：
 \[
-\bm X=\bm\mu+L\bm Z\ \sim\ N_p(\bm\mu,\Sigma).
+\eta_1=2\xi_1,\qquad
+\eta_2=2(0.8\xi_1+\sqrt{1-0.64}\,\xi_2)=1.6\xi_1+1.2\xi_2 .
 \]
-原理：$\Cov(\bm X)=L\,\Cov(\bm Z)\,L^T=LL^T=\Sigma$。
+\textbf{验证}：
+$\Var\eta_1=4$；$\Var\eta_2=1.6^2+1.2^2=2.56+1.44=4$；
+$\Cov(\eta_1,\eta_2)=2\times1.6\,\Var\xi_1=3.2=\sigma_1\sigma_2\rho=2\cdot2\cdot0.8$。
+均值、方差、相关系数全部正确，且正态线性组合仍正态，故 $(\eta_1,\eta_2)\sim N_2(\bm\mu,\Sigma)$。
+\end{sol}
 
-\subsection{条件分布法（最常考）}
+\subsection{条件分布法：链式法则的胜利}
 
-\begin{kbox}{基本思想：把联合分布拆成"链"}
+\paragraph{直觉先行。}
+联合密度永远可以"剥洋葱"：
 \[
-f(x_1,x_2,\dots,x_p)=f_1(x_1)\,f_2(x_2\mid x_1)\cdots f_p(x_p\mid x_1,\dots,x_{p-1}).
+f(x_1,x_2,\dots,x_p)=f_1(x_1)\cdot f_2(x_2\mid x_1)\cdots f_p(x_p\mid x_1,\dots,x_{p-1}).
 \]
-于是只要会抽每个一维条件分布，就能逐个坐标地生成整个向量。
-\end{kbox}
+所以抽一个 $p$ 维向量 = 抽 $p$ 次一维：先抽 $x_1$，
+然后"在 $x_1$ 已知的世界里"抽 $x_2$，依此类推。
+相关性自动被条件分布编码进去了。
 
 \begin{ebox}{算法步骤}
 \begin{enumerate}[leftmargin=2em]
-  \item 从边际分布 $f_1(x_1)$ 抽 $x_1$；
-  \item 从条件分布 $f_2(x_2\mid x_1)$ 抽 $x_2$；
-  \item \dots 依此类推，直到抽出 $x_p$。输出 $(x_1,\dots,x_p)$。
+  \item 从边际 $f_1(x_1)$ 抽 $x_1$；
+  \item 从条件密度 $f_2(x_2\mid x_1)$ 抽 $x_2$；
+  \item \dots 直到 $f_p(x_p\mid x_1,\dots,x_{p-1})$ 抽出 $x_p$，输出整个向量。
 \end{enumerate}
 \end{ebox}
 
-\textbf{例（二维正态的条件分布法）}：
-$X=(X_1,X_2)\sim N_2(\bm\mu,\Sigma)$ 时，
+\paragraph{多维正态的条件分布公式（需记）。}
+把 $\bm X,\bm\mu,\Sigma$ 分块：
+$\bm X=\binom{\bm X_1}{\bm X_2}$，
+$\Sigma=\begin{pmatrix}\Sigma_{11}&\Sigma_{12}\\\Sigma_{21}&\Sigma_{22}\end{pmatrix}$，则
+\[
+\bm X_2\mid\bm X_1=\bm x_1\ \sim\ N\big(\bm\mu_2+\Sigma_{21}\Sigma_{11}^{-1}(\bm x_1-\bm\mu_1),\ \ \Sigma_{22}-\Sigma_{21}\Sigma_{11}^{-1}\Sigma_{12}\big).
+\]
+
+\begin{exbox}[条件分布法生成二维正态]
+用条件分布法生成 $N_2(\bm\mu,\Sigma)$（参数同上例：$\sigma_1=\sigma_2=2,\rho=0.8,\bm\mu=\bm0$）。
+\end{exbox}
+\begin{sol}
+二维情形条件公式化简为：
 \[
 X_1\sim N(\mu_1,\sigma_1^2),\qquad
-X_2\mid X_1=x_1\ \sim\ N\!\Big(\mu_2+\rho\frac{\sigma_2}{\sigma_1}(x_1-\mu_1),\ \sigma_2^2(1-\rho^2)\Big).
+X_2\mid X_1=x_1\sim N\Big(\mu_2+\rho\frac{\sigma_2}{\sigma_1}(x_1-\mu_1),\ \sigma_2^2(1-\rho^2)\Big).
 \]
-先抽 $x_1$，再代入条件正态抽 $x_2$，结果与变换法一致。
-\textbf{多维正态的条件分布公式}（需记）：把 $\bm X,\bm\mu,\Sigma$ 分块为
-$\bm X=\binom{\bm X_1}{\bm X_2}$，$\Sigma=\begin{pmatrix}\Sigma_{11}&\Sigma_{12}\\\Sigma_{21}&\Sigma_{22}\end{pmatrix}$，则
-\[
-\bm X_2\mid \bm X_1=\bm x_1\sim N\big(\bm\mu_2+\Sigma_{21}\Sigma_{11}^{-1}(\bm x_1-\bm\mu_1),\ \Sigma_{22}-\Sigma_{21}\Sigma_{11}^{-1}\Sigma_{12}\big).
-\]
+代入数值：$X_1\sim N(0,4)$；$X_2\mid X_1=x_1\sim N(0.8x_1,\ 4\times0.36)=N(0.8x_1,\,1.44)$。
 
-\subsection{多维舍选抽样法}
+\textbf{步骤}：(i) 抽 $z_1\sim N(0,1)$，令 $x_1=2z_1$；
+(ii) 抽 $z_2\sim N(0,1)$，令 $x_2=0.8x_1+1.2z_2$。
+展开发现 $x_2=1.6z_1+1.2z_2$——与变换法完全一致！两种方法殊途同归。
+\end{sol}
 
-与一维完全平行：目标联合密度 $p(\bm x)$，建议联合密度 $f(\bm x)$（容易抽，如各分量独立均匀），
-$M\ge\sup p/f$。抽 $\bm y\sim f$、$u\sim U(0,1)$，若 $u\le \dfrac{p(\bm y)}{Mf(\bm y)}$ 接受。
-常用于在不规则区域（如圆盘、单纯形）上抽均匀点：在包住它的方块里抽均匀点，落在区域内则接受。
+\subsection{多维舍选法}
 
-\subsection{离散随机向量：条件分布法与多项分布}
+与一维完全平行：目标密度 $p(\bm x)$，建议密度 $f(\bm x)$（常取各分量独立、容易抽的分布），
+$M\ge\sup p/f$；抽 $\bm y\sim f$、$u\sim U(0,1)$，$u\le\frac{p(\bm y)}{Mf(\bm y)}$ 则接受。
 
-\textbf{例（放球问题）}：把若干球独立等概率放入三个篮子，$X$ 为入 A 篮个数、$Y$ 为入 B 篮个数，
-先抽 $X\sim B(n,1/3)$，再抽 $Y\mid X=x\sim B(n-x,1/2)$。
+\begin{exbox}[单位圆盘上的均匀点]
+设计算法在单位圆盘 $\{x^2+y^2\le1\}$ 上抽均匀分布的点，并求接受概率。
+\end{exbox}
+\begin{sol}
+在正方形 $[-1,1]^2$ 上抽均匀点很容易：$x=2u_1-1,\ y=2u_2-1$。
+圆盘含于正方形内，于是：
+\textbf{(i)} 产生 $u_1,u_2\sim U(0,1)$，令 $x=2u_1-1,y=2u_2-1$；
+\textbf{(ii)} 若 $x^2+y^2\le1$ 接受 $(x,y)$，否则返回 (i)。
 
-\textbf{多项分布} $\mathrm{Mult}(n;p_1,\dots,p_r)$：盒中 $r$ 种颜色比例 $p_1,\dots,p_r$，
-有放回取 $n$ 次，$X_i$ 为第 $i$ 色出现次数。两种生成方式：
+接受概率 $=$ 圆盘面积/正方形面积 $=\pi/4\approx78.5\%$。
+被接受的点在圆盘内自动均匀（均匀点限制在子区域上仍均匀）。
+\end{sol}
+
+\subsection{离散随机向量：条件分布法大显身手}
+
+\begin{exbox}[放球问题（课件原题）]
+把 $n$ 个球独立地等概率放入 A、B、C 三个篮子。
+记 $X$ 为落入 A 的个数、$Y$ 为落入 B 的个数。给出生成 $(X,Y)$ 的方法。
+\end{exbox}
+\begin{sol}
+边际：每个球进 A 的概率 $1/3$，故 $X\sim B(n,\frac13)$。
+条件：已知 $X=x$，剩下 $n-x$ 个球只在 B、C 中等可能选择，进 B 概率
+$\frac{1/3}{2/3}=\frac12$，故 $Y\mid X=x\sim B(n-x,\frac12)$。
+
+\textbf{步骤}：(i) 抽 $x\sim B(n,1/3)$；(ii) 抽 $y\sim B(n-x,1/2)$；输出 $(x,y)$。
+\end{sol}
+
+\paragraph{推广：多项分布 $\mathrm{Mult}(n;p_1,\dots,p_r)$。}
+有放回取 $n$ 次、每次落入第 $i$ 类概率 $p_i$，$X_i$ 为第 $i$ 类计数。两种生成方式：
 \begin{enumerate}[leftmargin=2em]
-  \item \textbf{逐次分类法}：做 $n$ 次独立的 $r$ 点离散抽样（查表法），统计各类次数；
-  \item \textbf{条件分布法}：$X_1\sim B(n,p_1)$；
-  $X_2\mid X_1=x_1\sim B\big(n-x_1,\frac{p_2}{1-p_1}\big)$；一般地
+  \item \textbf{逐次分类法}：做 $n$ 次离散查表抽样（第 1 章方法），统计各类频数；
+  \item \textbf{条件分布法}：
   \[
-  X_k\mid X_1,\dots,X_{k-1}\ \sim\ B\Big(n-\textstyle\sum_{i<k}x_i,\ \frac{p_k}{1-\sum_{i<k}p_i}\Big).
+  X_1\sim B(n,p_1),\qquad
+  X_k\mid X_1,\dots,X_{k-1}\sim B\Big(n-\sum_{i<k}x_i,\ \frac{p_k}{1-\sum_{i<k}p_i}\Big).
   \]
+  直觉：抽掉前几类后，剩余的球在剩余类别中按"重新归一化"的概率分配。
 \end{enumerate}
 
-\subsection{本章考点与题型}
+\subsection{本章考点地图}
 
-\begin{ebox}{高频题型}
+\begin{ebox}{高频题型清单}
 \begin{enumerate}[leftmargin=2em]
-  \item \textbf{用变换法生成二维正态}：写出 $\eta_1,\eta_2$ 的表达式并验证期望、方差、相关系数（如 $\mu_1=\mu_2=0,\sigma_1=\sigma_2=2,\rho=0.8$ 的数值题）。
-  \item \textbf{条件分布法生成二维正态}：写出 $X_2\mid X_1$ 的条件正态参数，给出两步算法。
-  \item \textbf{条件分布法生成离散向量}：放球/多项分布，写出逐分量的条件二项分布。
-  \item \textbf{Jacobi 公式推导}：给出变换求新密度（如证明 Box--Muller）。
+  \item \textbf{变换法生成二维正态}：默写 $\eta_1,\eta_2$ 公式，代数值并验证三个矩（如 $\sigma_1=\sigma_2=2,\rho=0.8$）；
+  \item \textbf{条件分布法生成二维正态}：默写条件正态参数 $\mu_2+\rho\frac{\sigma_2}{\sigma_1}(x_1-\mu_1)$、$\sigma_2^2(1-\rho^2)$，写两步算法；
+  \item \textbf{离散向量条件分布法}：放球/多项分布的逐分量条件二项分布；
+  \item \textbf{多维舍选}：不规则区域上的均匀抽样+接受概率（面积比）；
+  \item \textbf{Jacobi 公式}：用密度变换公式验证某变换的正确性。
 \end{enumerate}
 \end{ebox}

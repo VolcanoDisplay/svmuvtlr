@@ -1,42 +1,70 @@
-\section{预备知识：概率论与数理统计基础速览}
+\section{预备知识：概率论与数理统计基础（讲给你听）}
 
-本章是后面所有内容的"地基"。统计计算的核心思想只有一句话：
-\textbf{用计算机生成大量随机样本，再用样本的频率/均值去近似概率/期望。}
-要看懂这件事，需要先把下面几个基础概念弄扎实。
+\subsection{开场白：统计计算到底是一门什么课}
 
-\subsection{随机变量、分布函数与密度函数}
+想象你要算一个很复杂的积分、或者想知道某个估计量到底准不准、某个检验到底灵不灵——
+理论推导推不动了怎么办？统计计算的回答是：\textbf{别推了，用计算机"做实验"！}
+让计算机生成成千上万个随机样本，用样本的频率近似概率、用样本的均值近似期望。
+这套思想叫\textbf{蒙特卡洛方法（Monte Carlo）}，名字来自摩纳哥的赌城——因为它的本质就是"掷骰子"。
 
-\begin{kbox}{核心概念}
+整门课的逻辑链条是：
+\begin{center}
+\fbox{\parbox{0.92\textwidth}{\centering
+第1--2章：先学会"掷骰子"——怎么生成服从各种分布的随机数（一维和多维）\\
+第3--4章：用随机数做统计实验——评估估计量的好坏、检验的功效\\
+第5章：实验做得更精——同样的计算量，怎么把误差降到最低（方差缩减）\\
+第6章：没有总体也能做实验——只有一份数据时的 Bootstrap 重抽样\\
+第7章：似然推不动时的迭代神器——EM 算法
+}}
+\end{center}
+
+要看懂这一切，先把下面的基础打牢。已经熟悉概率统计的同学可以快速扫一遍，重点看每节末尾的"它和本课的关系"。
+
+\subsection{随机变量与分布：描述"不确定"的语言}
+
+随机变量 $X$ 是"结果不确定的数"。要完整描述它，用\textbf{分布函数（CDF）}：
+\[
+F(x)=\Pr(X\le x),
+\]
+它回答"取值不超过 $x$ 的概率是多少"。$F$ 单调不减、右连续，从 0 升到 1。
+
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{分布函数（CDF）}：$F(x)=\Pr(X\le x)$。单调不减、右连续，$F(-\infty)=0$，$F(+\infty)=1$。任何随机变量都有分布函数。
-  \item \textbf{密度函数（pdf）}：连续型随机变量满足 $F(x)=\int_{-\infty}^{x}f(t)\d t$，即 $f(x)=F'(x)$。直观理解：$f(x)\Delta x \approx \Pr(x< X\le x+\Delta x)$，密度大的地方取值"更密集"。
-  \item \textbf{分布律（pmf）}：离散型随机变量用 $p_k=\Pr(X=x_k)$ 描述，$\sum_k p_k=1$。
+  \item 连续型随机变量还有\textbf{密度函数（pdf）} $f(x)=F'(x)$。注意密度本身不是概率，
+  $f(x)\Delta x\approx\Pr(x<X\le x+\Delta x)$ 才是——密度大的地方，取值"扎堆"。
+  \item 离散型随机变量用\textbf{分布律} $p_k=\Pr(X=x_k)$，$\sum_k p_k=1$。
 \end{itemize}
-\end{kbox}
 
-\subsection{期望、方差与协方差}
+\textbf{它和本课的关系}：第 1 章逆变换法的全部秘密就藏在分布函数 $F$ 里——
+$F$ 把任何分布"压平"成 $U(0,1)$，反过来 $F^{-1}$ 把均匀分布"拉伸"成任何分布。
+
+\subsection{期望、方差与协方差：三个最重要的数字}
 
 \[
-\E(X)=\int xf(x)\d x \quad(\text{连续型}),\qquad
-\E(X)=\sum_k x_k p_k \quad(\text{离散型}).
+\E(X)=\int xf(x)\d x\ \text{或}\ \sum_k x_kp_k\quad(\text{平均位置}),\qquad
+\Var(X)=\E(X^2)-(\E X)^2\quad(\text{波动大小}).
 \]
-\[
-\Var(X)=\E\big[(X-\E X)^2\big]=\E(X^2)-(\E X)^2 .
-\]
+协方差 $\Cov(X,Y)=\E(XY)-\E X\E Y$ 度量两个变量"同涨同跌"的程度，
+标准化后是相关系数 $\rho\in[-1,1]$。
 
-常用性质（考试与推导中反复用到）：
+必须烂熟于心的运算规则：
 \begin{itemize}[leftmargin=2em]
-  \item 线性性：$\E(aX+bY)=a\E X+b\E Y$（\textbf{无需独立}）。
-  \item $\Var(aX+b)=a^2\Var(X)$。
-  \item $\Var(X+Y)=\Var X+\Var Y+2\Cov(X,Y)$；若 $X,Y$ 独立，则 $\Cov(X,Y)=0$。
-  \item $\Cov(X,Y)=\E(XY)-\E X\,\E Y$；相关系数 $\rho=\Cov(X,Y)/\sqrt{\Var X\,\Var Y}\in[-1,1]$。
+  \item $\E(aX+bY)=a\E X+b\E Y$（永远成立，\textbf{不需要独立}）；
+  \item $\Var(aX+b)=a^2\Var X$（平移不改变波动，缩放按平方）；
+  \item $\Var(X+Y)=\Var X+\Var Y+2\Cov(X,Y)$；独立时交叉项为 0。
 \end{itemize}
 
-\begin{rmk}
-第5章方差缩减技术的全部原理就建立在
-$\Var\!\big(\frac{X+Y}{2}\big)=\frac14(\Var X+\Var Y+2\Cov(X,Y))$
-这个公式上：若能让 $\Cov(X,Y)<0$，平均后的方差就比独立样本更小。
-\end{rmk}
+\begin{exbox}[方差公式热身]
+设 $X,Y$ 同分布，$\Var X=\sigma^2$，相关系数为 $\rho$。求 $\Var\big(\frac{X+Y}{2}\big)$，并讨论 $\rho<0$ 时会发生什么。
+\end{exbox}
+\begin{sol}
+\[
+\Var\Big(\frac{X+Y}{2}\Big)=\frac14(\Var X+\Var Y+2\Cov(X,Y))
+=\frac{\sigma^2}{2}(1+\rho).
+\]
+若 $X,Y$ 独立（$\rho=0$），方差为 $\sigma^2/2$；
+若 $\rho<0$，方差比独立时\textbf{更小}；极端情形 $\rho=-1$ 时方差为 0！
+\textbf{这正是第 5 章对偶变量法的全部原理}：故意制造负相关的样本对，平均之后方差骤降。
+\end{sol}
 
 \subsection{常用分布速查表}
 
@@ -56,55 +84,86 @@ Beta$(\alpha,\beta)$ & $f=\frac{\Gamma(\alpha+\beta)}{\Gamma(\alpha)\Gamma(\beta
 \end{tabular}
 \end{center}
 
-\textbf{几个重要关系}（生成随机数时经常用来"借力"）：
+\textbf{分布之间的"亲戚关系"}（第 1 章变换法靠它们吃饭）：
 \begin{itemize}[leftmargin=2em]
-  \item $\mathrm{Exp}(\lambda)=\mathrm{Gamma}(1,\lambda)$；Gamma 可加性：独立的 $\mathrm{Gamma}(\alpha_i,\gamma)$ 之和服从 $\mathrm{Gamma}(\sum\alpha_i,\gamma)$。
-  \item $\chi^2(n)=\mathrm{Gamma}(n/2,1/2)$；若 $Z_i\overset{iid}{\sim}N(0,1)$，则 $\sum_{i=1}^n Z_i^2\sim\chi^2(n)$。
-  \item 若 $\xi\sim\mathrm{Gamma}(\alpha,\gamma)$，则 $\xi/a\sim\mathrm{Gamma}(\alpha,a\gamma)$（尺度变换）。
-  \item 若 $Z\sim N(0,1)$，则 $\mu+\sigma Z\sim N(\mu,\sigma^2)$。
+  \item $\mathrm{Exp}(\lambda)=\mathrm{Gamma}(1,\lambda)$；独立 $\mathrm{Gamma}(\alpha_i,\gamma)$ 之和 $\sim\mathrm{Gamma}(\sum\alpha_i,\gamma)$（可加性）；
+  \item $\chi^2(n)=\mathrm{Gamma}(n/2,1/2)$；$Z_i\overset{iid}{\sim}N(0,1)\Rightarrow\sum_{i=1}^n Z_i^2\sim\chi^2(n)$；
+  \item 尺度变换：$\xi\sim\mathrm{Gamma}(\alpha,\gamma)\Rightarrow\xi/a\sim\mathrm{Gamma}(\alpha,a\gamma)$；
+  \item $Z\sim N(0,1)\Rightarrow\mu+\sigma Z\sim N(\mu,\sigma^2)$。
 \end{itemize}
 
-\subsection{三大抽样分布与统计量}
+\subsection{三大抽样分布：统计推断的"工具箱"}
 
 设 $X_1,\dots,X_n\overset{iid}{\sim}N(\mu,\sigma^2)$，
 样本均值 $\bar X=\frac1n\sum X_i$，样本方差 $S^2=\frac{1}{n-1}\sum(X_i-\bar X)^2$。则
 \[
-\bar X\sim N\!\Big(\mu,\frac{\sigma^2}{n}\Big),\qquad
+\bar X\sim N\Big(\mu,\frac{\sigma^2}{n}\Big),\qquad
 \frac{(n-1)S^2}{\sigma^2}\sim\chi^2(n-1),\qquad
 \frac{\bar X-\mu}{S/\sqrt n}\sim t(n-1),
 \]
-且 $\bar X$ 与 $S^2$ 独立。两个独立卡方变量标准化之比服从 $F$ 分布：
-$\dfrac{\chi^2(m)/m}{\chi^2(n)/n}\sim F(m,n)$。
+且 $\bar X$ 与 $S^2$ 独立。两个独立卡方比出 $F$ 分布：
+$\frac{\chi^2(m)/m}{\chi^2(n)/n}\sim F(m,n)$。
 
-\subsection{大数定律与中心极限定理（蒙特卡洛方法的理论基础）}
+记忆口诀：\textbf{均值正态、方差卡方、标准化用 $t$、比方差用 $F$}。第 3 章构造置信区间时全靠它们。
 
-\begin{kbox}{为什么"用样本均值估期望"是合理的？}
+\subsection{大数定律与中心极限定理：蒙特卡洛的两块基石}
+
+\begin{kbox}{为什么"用样本均值估期望"是靠谱的？}
 设 $X_1,X_2,\dots$ 独立同分布，$\E X_i=\mu$，$\Var X_i=\sigma^2<\infty$。
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{大数定律（LLN）}：$\bar X_n=\frac1n\sum_{i=1}^n X_i\xrightarrow{P}\mu$。\\
-  即样本量足够大时，样本均值几乎必然接近真实期望——这保证了蒙特卡洛估计的\textbf{相合性}。
-  \item \textbf{中心极限定理（CLT}）：$\dfrac{\bar X_n-\mu}{\sigma/\sqrt n}\xrightarrow{d}N(0,1)$。\\
-  即误差约为 $O(1/\sqrt n)$ 量级，且近似服从正态分布——这给出了蒙特卡洛估计的\textbf{精度}与置信区间。
+  \item \textbf{大数定律（LLN）}：$\bar X_n\xrightarrow{P}\mu$。
+  样本够多时样本均值必然贴近真值——保证蒙特卡洛估计\textbf{方向正确（相合）}。
+  \item \textbf{中心极限定理（CLT）}：$\frac{\bar X_n-\mu}{\sigma/\sqrt n}\xrightarrow{d}N(0,1)$。
+  误差近似正态、量级 $O(1/\sqrt n)$——告诉我们蒙特卡洛估计\textbf{误差有多大}，还顺手给出置信区间。
 \end{itemize}
-\textbf{重要结论}：蒙特卡洛误差的标准差为 $\sigma/\sqrt n$。想把精度提高 10 倍，样本量需要扩大 100 倍；或者保持 $n$ 不变、想办法\textbf{减小 $\sigma$}——这正是第 5 章方差缩减的动机。
+\textbf{关键数字感}：误差标准差 $=\sigma/\sqrt n$。想把精度提高 10 倍？样本量得乘 100！
+所以"砸样本量"很贵，"降 $\sigma$"才是聪明的办法——这就是第 5 章方差缩减的全部动机。
 \end{kbox}
 
-\subsection{点估计、置信区间与假设检验回顾}
+\begin{exbox}[蒙特卡洛误差估算]
+用 $n=10000$ 个 $U(0,1)$ 随机数以平均值法估计 $I=\int_0^1 e^x\d x$，
+已知 $\Var(e^U)\approx0.242$。估计误差的标准差是多少？若要把误差缩小到原来的 $1/10$，需要多少样本？
+\end{exbox}
+\begin{sol}
+误差标准差 $\approx\sqrt{0.242/10000}\approx0.0049$。
+要缩小到 $1/10$，由 $1/\sqrt n$ 规律，样本量需扩大 $100$ 倍，即 $n=10^6$。
+这说明蒙特卡洛"加样本"提高精度的效率很低，方差缩减技术非常必要。
+\end{sol}
 
+\subsection{统计推断速览：估计与检验}
+
+\textbf{点估计}：用统计量 $\hat\theta(X_1,\dots,X_n)$ 猜未知参数 $\theta$。
+构造方法：矩估计（用样本矩对上总体矩）、极大似然估计 MLE（找让数据"最可能出现"的参数）。
+评价一个估计好不好，看三件事：
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{点估计}：用统计量 $\hat\theta(X_1,\dots,X_n)$ 估计未知参数 $\theta$。构造方法主要有\textbf{矩估计法}和\textbf{极大似然估计法（MLE）}。评价标准：
-  \begin{itemize}
-    \item 无偏性：$\E(\hat\theta)=\theta$；偏差 $\mathrm{Bias}(\hat\theta)=\E(\hat\theta)-\theta$。
-    \item 有效性：同为无偏估计时方差更小者更有效。
-    \item 相合性：$n\to\infty$ 时 $\hat\theta\xrightarrow{P}\theta$。
-    \item 综合指标——均方误差：$\mathrm{MSE}(\hat\theta)=\E(\hat\theta-\theta)^2=\mathrm{Bias}^2+\Var(\hat\theta)$。
-  \end{itemize}
-  \item \textbf{置信区间}：随机区间 $[\hat\theta_L,\hat\theta_U]$ 满足 $\Pr(\hat\theta_L\le\theta\le\hat\theta_U)=1-\alpha$。$1-\alpha$ 称置信水平。构造的通用套路是找\textbf{枢轴量}（含 $\theta$ 但分布已知的量）。
-  \item \textbf{假设检验}：原假设 $H_0$ vs 备择假设 $H_1$。
-  \begin{itemize}
-    \item \textbf{第一类错误}（弃真）：$H_0$ 为真却拒绝，概率记 $\alpha$（显著性水平）。
-    \item \textbf{第二类错误}（取伪）：$H_0$ 为假却接受，概率记 $\beta$。
-    \item \textbf{功效（power）}：$1-\beta=\Pr(\text{拒绝 }H_0\mid H_1\text{ 成立})$，衡量检验"识别假原假设"的能力。
-  \end{itemize}
-  \item \textbf{似然函数}：样本 $x_1,\dots,x_n$ 给定后，$L(\theta)=\prod_{i=1}^n f(x_i;\theta)$。MLE 就是使 $L(\theta)$（等价地 $\log L$）最大的 $\theta$。第 7 章 EM 算法处理的是"数据不完整时没法直接最大化似然"的情形。
+  \item \textbf{无偏性}：$\E\hat\theta=\theta$，平均来说不偏不倚；偏差 $\mathrm{Bias}=\E\hat\theta-\theta$；
+  \item \textbf{有效性}：都无偏时，方差小者胜；
+  \item \textbf{相合性}：样本越多越接近真值。
 \end{itemize}
+综合裁判是\textbf{均方误差}：
+\[
+\mathrm{MSE}(\hat\theta)=\E(\hat\theta-\theta)^2=\mathrm{Bias}^2+\Var(\hat\theta)
+\quad(\text{"准不准"}+\text{"稳不稳"}).
+\]
+
+\textbf{置信区间}：给出一个随机区间，让它以 $1-\alpha$ 的概率罩住真参数。
+套路是找\textbf{枢轴量}——一个含 $\theta$ 但分布完全已知的量（如 $\frac{\bar X-\mu}{S/\sqrt n}\sim t(n-1)$），
+对它的分位数解不等式即得区间。
+
+\textbf{假设检验}：法庭审判的逻辑——$H_0$ 是"被告无罪"，证据（数据）足够反常才定罪（拒绝 $H_0$）。
+两种错误：
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|c|c|c|}
+\hline
+ & $H_0$ 实际为真 & $H_0$ 实际为假\\\hline
+拒绝 $H_0$ & \textbf{第一类错误（弃真）}，概率 $\alpha$ & 正确！概率 $=1-\beta=$\textbf{功效}\\\hline
+接受 $H_0$ & 正确 & \textbf{第二类错误（取伪）}，概率 $\beta$\\\hline
+\end{tabular}
+\end{center}
+$\alpha$ 是我们主动控制的（显著性水平），功效 $1-\beta$ 衡量检验"抓坏人"的本事。
+很多检验的功效根本算不出解析式——第 4 章就教你用模拟去"量"它。
+
+\textbf{似然函数}：观测到 $x_1,\dots,x_n$ 后，$L(\theta)=\prod_i f(x_i;\theta)$
+把"参数取 $\theta$ 时看到这批数据的可能性"写成 $\theta$ 的函数，MLE 就是它的最大值点。
+第 7 章 EM 算法处理的就是"数据缺一块、似然写不全"时怎么仍然做 MLE。

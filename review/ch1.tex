@@ -1,19 +1,28 @@
 \section{第1章\quad 一维（非均匀）随机数的生成}
 
-\subsection{总览：这一章在干什么}
+\subsection{故事的起点：计算机只会一种"骰子"}
 
-计算机能直接产生的只有 $U(0,1)$ 均匀随机数（由线性同余等伪随机数发生器产生）。
-本章解决：\textbf{如何把均匀随机数加工成服从任意目标分布 $F(x)$ 的随机数。}
-五大方法：\textbf{逆变换法、舍选（接受—拒绝）法、变换法、复合法、近似法}；
-以及离散分布的抽样。
+计算机靠线性同余等确定性算法产生\textbf{伪随机数}，它们看起来就像 $U(0,1)$
+均匀分布的独立样本。这是我们手里\textbf{唯一}的原材料。
+可现实世界的随机现象千姿百态：排队等待时间像指数分布、测量误差像正态分布、
+比例数据像 Beta 分布……
+
+于是第 1 章的任务就一句话：\textbf{把均匀随机数这块"面团"，揉成任何想要的分布}。
+本章给出五种"揉面手法"：逆变换法、舍选法、变换法、复合法、近似法，最后处理离散分布。
 
 \begin{defn}[随机数]
 设 $X$ 有分布函数 $F(x)$，从 $F$ 中随机抽样得到的序列 $\{x_i\}$ 称为该分布的随机数序列，$x_i$ 称为分布 $F(x)$ 的随机数。
 \end{defn}
 
-\subsection{逆变换法（最重要、最常考）}
+\subsection{逆变换法：分布函数是把"魔法尺子"}
 
-\begin{kbox}{定理 1.1.1（逆变换法原理）}
+\paragraph{直觉先行。}
+分布函数 $F$ 有个神奇性质：不管 $X$ 是什么分布，$F(X)$ 都被"压平"成 $U(0,1)$。
+为什么？因为 $F$ 恰好把"概率堆得密"的区域拉宽、把"概率稀"的区域压窄，
+压完之后处处均匀。既然 $F$ 能压平，那 $F^{-1}$ 就能反向操作：
+\textbf{把均匀随机数拉伸回目标分布}。这就是逆变换法。
+
+\begin{kbox}{定理 1.1.1（逆变换法原理，证明必考）}
 设连续型随机变量 $\eta$ 的分布函数 $F(x)$ 连续且严格单调上升，反函数 $F^{-1}$ 存在。则
 \begin{enumerate}[leftmargin=2em]
   \item $F(\eta)\sim U(0,1)$；
@@ -21,154 +30,258 @@
 \end{enumerate}
 \end{kbox}
 
-\begin{proof}[证明（必会！）]
+\begin{proof}
 (1) 记 $G(u)=\Pr(F(\eta)\le u)$。当 $u\in[0,1]$ 时，由 $F$ 严格单调，
-$G(u)=\Pr(\eta\le F^{-1}(u))=F(F^{-1}(u))=u$；$u<0$ 时 $G=0$，$u>1$ 时 $G=1$。
-这正是 $U(0,1)$ 的分布函数。
+\[
+G(u)=\Pr\{\eta\le F^{-1}(u)\}=F(F^{-1}(u))=u;
+\]
+$u<0$ 时 $G(u)=0$；$u>1$ 时 $G(u)=1$。这正是 $U(0,1)$ 的分布函数。
 
-(2) $\Pr(F^{-1}(U)\le x)=\Pr(U\le F(x))=F(x)$（因为 $U$ 均匀且 $F(x)\in[0,1]$）。
+(2) $\Pr(F^{-1}(U)\le x)=\Pr(U\le F(x))=F(x)$（均匀分布落在 $[0,F(x)]$ 的概率就是其长度）。
 \end{proof}
 
 \begin{ebox}{算法步骤}
 \begin{enumerate}[leftmargin=2em]
   \item 产生 $u\sim U(0,1)$；
-  \item 计算 $x=F^{-1}(u)$，则 $x$ 即为目标分布的随机数。
+  \item 计算 $x=F^{-1}(u)$，输出 $x$。
 \end{enumerate}
+使用前提：$F^{-1}$ 能显式（或方便地数值）求出。
 \end{ebox}
 
-\textbf{经典例子（务必熟练手算）：}
-\begin{itemize}[leftmargin=2em]
-  \item \textbf{指数分布} $\mathrm{Exp}(\lambda)$：$F(x)=1-e^{-\lambda x}$，解 $u=1-e^{-\lambda x}$ 得
-  \[
-  x=-\frac{1}{\lambda}\ln(1-u)\quad\text{（由于 }1-U\overset{d}{=}U\text{，也常写 }x=-\tfrac1\lambda\ln u).
-  \]
-  \item \textbf{柯西分布}：$F(x)=\frac12+\frac1\pi\arctan x \Rightarrow x=\tan\big(\pi(u-\tfrac12)\big)$。
-  \item \textbf{威布尔分布} $F(x)=1-e^{-(x/\beta)^\alpha}\Rightarrow x=\beta(-\ln u)^{1/\alpha}$。
-\end{itemize}
+\begin{exbox}[指数分布（最经典）]
+用逆变换法生成 $\mathrm{Exp}(\lambda)$（密度 $f(x)=\lambda e^{-\lambda x},x>0$）的随机数。
+\end{exbox}
+\begin{sol}
+先求分布函数：$F(x)=\int_0^x\lambda e^{-\lambda t}\d t=1-e^{-\lambda x}$。
+令 $u=1-e^{-\lambda x}$，解出
+\[
+x=-\frac1\lambda\ln(1-u).
+\]
+又因为 $U\sim U(0,1)$ 时 $1-U$ 也 $\sim U(0,1)$，可简化为 $x=-\frac1\lambda\ln u$。
+\textbf{步骤}：产生 $u\sim U(0,1)$，输出 $x=-\frac1\lambda\ln u$。
+\end{sol}
 
-\begin{wbox}{易错点}
-逆变换法的局限：很多分布（正态、Gamma、Beta 等）的分布函数没有显式表达式，
-$F^{-1}$ 无法解析求出，因此\textbf{不能直接用逆变换法}，需要下面的方法。
+\begin{exbox}[给密度求抽样公式]
+密度为 $f(x)=3x^2,\ 0<x<1$，写出逆变换抽样公式。
+\end{exbox}
+\begin{sol}
+$F(x)=\int_0^x3t^2\d t=x^3$。令 $u=x^3$ 得 $x=u^{1/3}$。
+故产生 $u\sim U(0,1)$，输出 $x=u^{1/3}$ 即可。
+\textbf{套路总结}：密度 $\to$ 积分得 $F$ $\to$ 解方程 $u=F(x)$ 得 $x=F^{-1}(u)$。
+\end{sol}
+
+\begin{exbox}[柯西分布与威布尔分布]
+写出柯西分布（$F(x)=\frac12+\frac1\pi\arctan x$）与威布尔分布（$F(x)=1-e^{-(x/\beta)^\alpha}$）的逆变换公式。
+\end{exbox}
+\begin{sol}
+柯西：$u=\frac12+\frac1\pi\arctan x\Rightarrow x=\tan\big(\pi(u-\frac12)\big)$。\\
+威布尔：$u=1-e^{-(x/\beta)^\alpha}\Rightarrow x=\beta\big(-\ln(1-u)\big)^{1/\alpha}$
+（同样可把 $1-u$ 换成 $u$）。
+\end{sol}
+
+\begin{wbox}{逆变换法的"天花板"}
+正态、Gamma、Beta 等分布的 $F$ 没有初等表达式，$F^{-1}$ 解不出来，
+逆变换法就卡住了。怎么办？请看下一节——不会算反函数，那就"撒点+筛选"。
 \end{wbox}
 
-\subsection{舍选抽样法（接受—拒绝法）}
+\subsection{舍选抽样法：不会算，就用"筛子"筛}
 
-\begin{kbox}{基本思想}
-目标密度 $p(x)$ 不好直接抽，就找一个\textbf{容易抽样}的"建议密度" $f(x)$ 和常数 $M\ (\ge 1)$，使
-\[
-p(x)\le M f(x)\quad\text{对一切 }x ,
-\]
-即 $p$ 被 $Mf$ "罩住"。记 $h(x)=\dfrac{p(x)}{Mf(x)}\in[0,1]$。
-\end{kbox}
+\paragraph{直觉先行。}
+想从复杂密度 $p(x)$ 抽样，但 $p$ 不好直接抽。换个思路：
+找一个\textbf{容易抽}的密度 $f(x)$（比如均匀、指数），把它"放大" $M$ 倍罩住 $p$：
+$p(x)\le Mf(x)$。然后在 $Mf$ 的"大帐篷"下面均匀撒点，
+只保留落在 $p$ 曲线下方的点——筛剩下的点，横坐标恰好按 $p$ 分布！
+直观上：$p$ 高的地方留下的点多、$p$ 低的地方留下的点少，比例刚刚好。
 
-\begin{ebox}{算法步骤}
+\begin{ebox}{舍选算法（接受—拒绝法）}
+记 $h(x)=\dfrac{p(x)}{Mf(x)}\in[0,1]$（接受概率函数）。
 \begin{enumerate}[leftmargin=2em]
-  \item 由 $f(x)$ 产生随机数 $y$；
+  \item 由建议密度 $f(x)$ 产生 $y$；
   \item 产生 $u\sim U(0,1)$（与 $y$ 独立）；
-  \item 若 $u\le h(y)=\dfrac{p(y)}{Mf(y)}$，则\textbf{接受} $x=y$；否则\textbf{舍弃}，返回第 1 步。
+  \item 若 $u\le h(y)$，\textbf{接受} $x=y$；否则\textbf{舍弃}，返回第 1 步。
 \end{enumerate}
-被接受的 $x$ 恰好服从密度 $p(x)$。每次试验被接受的概率为 $1/M$，
-平均需要 $M$ 次试验得到一个有效样本，故 \textbf{$M$ 越小（越接近 1）效率越高}。
+\textbf{效率}：每次试验被接受的概率为 $1/M$，平均 $M$ 次试验出一个样本。
+所以 $M$ 要尽量小，最优取 $M=\sup_x p(x)/f(x)$（通常求导找最大值）。
 \end{ebox}
 
-\begin{rmk}
-直观理解：在曲线 $Mf(x)$ 下方均匀撒点，只保留落在 $p(x)$ 下方的点，
-这些点的横坐标自然按 $p$ 的"高矮"分布。
-\end{rmk}
+\begin{exbox}[Beta 分布的舍选法]
+设计算法生成 $\mathrm{Beta}(2,2)$，密度 $p(x)=6x(1-x),\ 0<x<1$。求最小的 $M$ 与平均接受概率。
+\end{exbox}
+\begin{sol}
+取建议密度 $f(x)=1$（即 $U(0,1)$）。求 $p$ 的最大值：
+$p'(x)=6(1-2x)=0\Rightarrow x=\frac12$，$p(\frac12)=\frac32$。
+故最小 $M=\frac32$，$h(y)=\frac{p(y)}{M}=4y(1-y)$。
 
-\textbf{例 1（Beta 分布）}：生成 $\mathrm{Beta}(\alpha,\beta)$（$\alpha,\beta>1$）。
-取 $f(x)=1$（即 $U(0,1)$ 密度），因 Beta 密度在众数 $x_0=\frac{\alpha-1}{\alpha+\beta-2}$ 处最大，取
-$M=p(x_0)$，则算法为：产生 $y,u\sim U(0,1)$，若 $u\le p(y)/M$ 接受。
+\textbf{算法}：(i) 产生 $y,u\sim U(0,1)$；(ii) 若 $u\le 4y(1-y)$ 输出 $x=y$，否则回 (i)。
 
-\textbf{例 2（半正态法生成标准正态）}：
-对 $|Z|$ 的密度 $p(x)=\sqrt{\frac{2}{\pi}}e^{-x^2/2}\,(x>0)$，
-取建议密度 $f(x)=e^{-x}$（$\mathrm{Exp}(1)$），可算得
+平均接受概率 $=1/M=2/3$，即平均 $1.5$ 次试验得到一个样本。
+
+\textbf{一般 $\mathrm{Beta}(\alpha,\beta)$（$\alpha,\beta>1$）}：密度最大值在众数
+$x_0=\frac{\alpha-1}{\alpha+\beta-2}$ 处，取 $M=p(x_0)$ 即可，套路完全相同。
+\end{sol}
+
+\begin{exbox}[半正态法生成标准正态（重点）]
+用舍选法生成 $N(0,1)$ 随机数：先对 $|Z|$ 的密度
+$p(x)=\sqrt{\frac2\pi}e^{-x^2/2}\ (x>0)$ 抽样，建议密度取 $\mathrm{Exp}(1)$：$f(x)=e^{-x}$。
+\end{exbox}
+\begin{sol}
+求 $M$：
 \[
-\frac{p(x)}{f(x)}=\sqrt{\frac{2}{\pi}}\,e^{x-x^2/2}\le\sqrt{\frac{2e}{\pi}}=:M\approx1.32 ,
+\frac{p(x)}{f(x)}=\sqrt{\frac2\pi}\,e^{x-x^2/2}.
 \]
-（最大值在 $x=1$ 处取得）。接受后再以等概率 $\pm$ 随机赋符号即得 $N(0,1)$。
+指数部分 $x-x^2/2$ 在 $x=1$ 处最大（导数 $1-x=0$），最大值 $\frac12$，故
+\[
+M=\sqrt{\frac2\pi}\,e^{1/2}=\sqrt{\frac{2e}{\pi}}\approx1.32,\qquad
+h(x)=\frac{p(x)}{Mf(x)}=e^{-(x-1)^2/2}.
+\]
+\textbf{算法}：(i) 产生指数随机数 $y=-\ln u_1$；(ii) 产生 $u_2$，若
+$u_2\le e^{-(y-1)^2/2}$ 接受；(iii) 再产生 $u_3$，若 $u_3\le\frac12$ 输出 $-y$，否则输出 $y$（随机赋符号，由对称性得完整正态）。
+接受率 $1/1.32\approx76\%$，效率很高。
+\end{sol}
 
-\textbf{例 3（Gamma 分布，$\alpha>1$）}：生成 $\mathrm{Gamma}(\alpha,1)$ 可取
-$\mathrm{Exp}(1/\alpha)$ 作建议分布（均值匹配），再按舍选法接受。
-若需 $\mathrm{Gamma}(\alpha,\gamma)$，先生成 $\eta\sim\mathrm{Gamma}(\alpha,1)$，
-则 $\eta/\gamma\sim\mathrm{Gamma}(\alpha,\gamma)$。
+\begin{exbox}[Gamma 分布的舍选法]
+生成 $\mathrm{Gamma}(\alpha,1)$（$\alpha>1$），建议分布取均值匹配的指数分布
+$f(x)=\frac1\alpha e^{-x/\alpha}$。说明思路，并说明如何得到一般的 $\mathrm{Gamma}(\alpha,\gamma)$。
+\end{exbox}
+\begin{sol}
+计算比值 $\frac{p(x)}{f(x)}=\frac{\alpha}{\Gamma(\alpha)}x^{\alpha-1}e^{-x(1-1/\alpha)}$。
+对 $\ln$ 求导：$\frac{\alpha-1}{x}-(1-\frac1\alpha)=0$，
+解得最大值点 $x^*=\frac{\alpha-1}{1-1/\alpha}=\alpha$，代入得
+$M=\frac{p(\alpha)}{f(\alpha)}=\frac{\alpha^{\alpha}e^{-(\alpha-1)}}{\Gamma(\alpha)}$，
+然后按标准舍选流程执行。
 
-\begin{wbox}{易错点}
+得到 $\eta\sim\mathrm{Gamma}(\alpha,1)$ 后，由尺度性质 $\eta/\gamma\sim\mathrm{Gamma}(\alpha,\gamma)$ 完成一般情形。
+\textbf{注意}：此法要求 $\alpha>1$；$0<\alpha<1$ 时需要另选建议分布。
+\end{sol}
+
+\begin{wbox}{舍选法三大易错点}
 \begin{itemize}[leftmargin=2em]
-  \item $M$ 必须满足 $M\ge\sup_x p(x)/f(x)$，通常通过求导找 $p/f$ 的最大值确定最优 $M$。
-  \item 建议密度 $f$ 的支撑必须覆盖 $p$ 的支撑（$p(x)>0$ 处必须 $f(x)>0$）。
-  \item 无界区间上不能取"均匀建议分布"，因为常数函数在 $(-\infty,\infty)$ 上积分发散。
+  \item $M$ 必须 $\ge\sup p/f$，否则"帐篷"罩不住目标密度，结果分布是错的；
+  \item 建议密度的支撑必须覆盖目标密度的支撑（$p>0$ 处必须 $f>0$）；
+  \item 无界区间上不能用"均匀建议分布"（常数在 $(-\infty,\infty)$ 积分发散），
+  指数/正态等支撑无界的分布要用指数等做建议分布。
 \end{itemize}
 \end{wbox}
 
-\subsection{变换抽样法}
+\subsection{变换抽样法：站在已知分布的肩膀上}
 
-利用已知分布之间的函数关系："会抽 $\xi$，且 $\eta=g(\xi)$，则把 $\xi$ 的样本代入 $g$ 即得 $\eta$ 的样本"。
+\paragraph{直觉先行。}
+如果 $\eta=g(\xi)$，而 $\xi$ 我们已经会抽，那把 $\xi$ 的样本代入 $g$ 就得到 $\eta$
+的样本——零成本！所以要熟记分布之间的"亲戚关系"（见预备知识），抽样时沿着关系链"借力"。
 
-\textbf{重要例子：}
+\begin{kbox}{必背的变换公式}
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{Box--Muller 法生成正态}：设 $U_1,U_2\overset{iid}{\sim}U(0,1)$，则
+  \item \textbf{Box--Muller 法}：$U_1,U_2\overset{iid}{\sim}U(0,1)$，则
   \[
   Z_1=\sqrt{-2\ln U_1}\cos(2\pi U_2),\qquad Z_2=\sqrt{-2\ln U_1}\sin(2\pi U_2)
   \]
-  是两个\textbf{独立}的 $N(0,1)$ 随机数。再令 $X=\mu+\sigma Z$ 得 $N(\mu,\sigma^2)$。
-  \item \textbf{卡方分布}：$Z_1,\dots,Z_n\overset{iid}{\sim}N(0,1)\Rightarrow\sum Z_i^2\sim\chi^2(n)$。
-  原理：$Z_i^2\sim\mathrm{Gamma}(1/2,1/2)$，由 Gamma 可加性求和得 $\mathrm{Gamma}(n/2,1/2)=\chi^2(n)$。
-  \item \textbf{Gamma 尺度变换}：$\xi\sim\mathrm{Gamma}(\alpha,\gamma)\Rightarrow\xi/a\sim\mathrm{Gamma}(\alpha,a\gamma)$。
-  例如生成 $\mathrm{Gamma}(1/2,3)$：先取 $Z\sim N(0,1)$，则 $Z^2\sim\mathrm{Gamma}(1/2,1/2)=\chi^2(1)$，再令 $\eta=Z^2/6\sim\mathrm{Gamma}(1/2,3)$。
-  \item \textbf{对数正态}：$Z\sim N(\mu,\sigma^2)\Rightarrow e^{Z}\sim\mathrm{LogNormal}(\mu,\sigma^2)$。
-  \item \textbf{$t$ 与 $F$}：$t(n)=\dfrac{N(0,1)}{\sqrt{\chi^2(n)/n}}$，$F(m,n)=\dfrac{\chi^2(m)/m}{\chi^2(n)/n}$（分子分母独立）。
+  是\textbf{独立}的 $N(0,1)$ 随机数对（极坐标变换+Jacobi 可证）。再做 $X=\mu+\sigma Z$ 得任意正态。
+  \item \textbf{卡方}：$Z_1,\dots,Z_n\overset{iid}{\sim}N(0,1)\Rightarrow\sum Z_i^2\sim\chi^2(n)$。
+  \item \textbf{Gamma 尺度}：$\xi\sim\mathrm{Gamma}(\alpha,\gamma)\Rightarrow\xi/a\sim\mathrm{Gamma}(\alpha,a\gamma)$。
+  \item \textbf{对数正态}：$e^{N(\mu,\sigma^2)}\sim\mathrm{LogNormal}$；
+  \textbf{$t$ 分布}：$\frac{N(0,1)}{\sqrt{\chi^2(n)/n}}$；\textbf{$F$ 分布}：$\frac{\chi^2(m)/m}{\chi^2(n)/n}$。
 \end{itemize}
+\end{kbox}
 
-\subsection{复合抽样法}
+\begin{exbox}[用变换法生成 Gamma(1/2, 3)（课件原题）]
+只用标准正态随机数，生成 $\mathrm{Gamma}(1/2,\,3)$ 的随机数。
+\end{exbox}
+\begin{sol}
+搭"关系链"：
+(i) 取 $Z\sim N(0,1)$；
+(ii) 则 $Z^2\sim\chi^2(1)=\mathrm{Gamma}(1/2,\,1/2)$；
+(iii) 由尺度性质，$\eta=Z^2/6\sim\mathrm{Gamma}(1/2,\,6\times\frac12)=\mathrm{Gamma}(1/2,\,3)$。
 
-若目标密度可写成混合形式
+\textbf{步骤}：用 Box--Muller 产生 $z$，输出 $\eta=z^2/6$。
+\end{sol}
+
+\begin{exbox}[生成卡方随机数]
+写出生成 $\chi^2(n)$ 随机数的变换法步骤，并说明原理。
+\end{exbox}
+\begin{sol}
+\textbf{步骤}：(i) 用 Box--Muller 生成 $n$ 个独立 $N(0,1)$ 随机数 $z_1,\dots,z_n$；
+(ii) 输出 $x=\sum_{i=1}^n z_i^2$。
+
+\textbf{原理}：单个 $z_i^2\sim\mathrm{Gamma}(1/2,1/2)$；由 Gamma 可加性，
+$n$ 个独立相加 $\sim\mathrm{Gamma}(n/2,1/2)=\chi^2(n)$。
+\end{sol}
+
+\subsection{复合抽样法：先选门，再进门}
+
+\paragraph{直觉先行。}
+有些密度天生是"混合体"：
 \[
-p(x)=\sum_{i=1}^{k} w_i\, p_i(x),\qquad w_i>0,\ \sum w_i=1 ,
+p(x)=\sum_{i=1}^k w_ip_i(x),\qquad w_i>0,\ \textstyle\sum w_i=1.
 \]
-其中每个 $p_i$ 都容易抽样，则：
+比如"70\%顾客来自分布 A、30\%来自分布 B"。抽样办法极自然——
+\textbf{先按权重掷骰子决定来自哪个成分，再从那个成分里抽}。
+
 \begin{ebox}{算法步骤}
 \begin{enumerate}[leftmargin=2em]
-  \item 以概率 $w_1,\dots,w_k$ 随机选一个分支 $i$（离散抽样）；
-  \item 从 $p_i(x)$ 中抽一个数作为输出。
+  \item 产生 $u\sim U(0,1)$，按累积权重确定分支 $i$（离散抽样）；
+  \item 从 $p_i(x)$ 中抽一个数输出。
 \end{enumerate}
+连续混合 $p(x)=\int p(x\mid y)g(y)\d y$ 同理：先抽 $y\sim g$，再抽 $x\sim p(\cdot\mid y)$。
 \end{ebox}
-连续混合同理：$p(x)=\int p(x\mid y) g(y)\d y$ 时，先抽 $y\sim g$，再抽 $x\sim p(\cdot\mid y)$。
 
-\subsection{近似抽样法}
+\begin{exbox}[复合法抽样]
+$p(x)=\frac13\cdot 2x+\frac23\cdot 3x^2,\ 0<x<1$。给出复合法抽样方案。
+\end{exbox}
+\begin{sol}
+这是 $w_1=\frac13,\ p_1(x)=2x$（即 $F_1=x^2$，逆变换 $x=\sqrt u$）与
+$w_2=\frac23,\ p_2(x)=3x^2$（逆变换 $x=u^{1/3}$）的混合。
+\textbf{步骤}：(i) 产生 $u_1$，若 $u_1\le\frac13$ 选成分 1，否则选成分 2；
+(ii) 产生 $u_2$；成分 1 输出 $\sqrt{u_2}$，成分 2 输出 $u_2^{1/3}$。
+\end{sol}
 
-利用中心极限定理近似生成正态随机数：取 $U_1,\dots,U_{12}\overset{iid}{\sim}U(0,1)$，
-因 $\E U_i=\frac12,\ \Var U_i=\frac1{12}$，故
+\subsection{近似抽样法：中心极限定理客串一把}
+
+懒人版正态发生器：取 12 个均匀数相加减 6，
 \[
 Z=\sum_{i=1}^{12}U_i-6\ \approx\ N(0,1).
 \]
-优点是简单，缺点是只是近似（尾部精度差），现代多用 Box--Muller 或舍选法。
+道理：$\E U_i=\frac12,\Var U_i=\frac1{12}$，12 个相加后期望 6、方差 1，
+由 CLT 近似正态。优点是简单，缺点是只取值于 $[-6,6]$、尾部精度差，
+正式场合用 Box--Muller 或舍选法。
 
-\subsection{离散分布随机数的抽样}
+\subsection{离散分布抽样：把 $(0,1)$ 切成一段一段}
 
-\begin{kbox}{离散逆变换法（查表法）}
-设 $\Pr(X=x_k)=p_k$，累积概率 $q_k=p_1+\cdots+p_k$。
-产生 $u\sim U(0,1)$，找到使 $q_{k-1}<u\le q_k$ 的 $k$，输出 $x_k$。
+\paragraph{直觉先行。}
+离散分布 $\Pr(X=x_k)=p_k$ 就像把单位区间切成长度为 $p_1,p_2,\dots$ 的小段：
+均匀数 $u$ 掉进第 $k$ 段，就输出 $x_k$。掉进第 $k$ 段的概率恰好是 $p_k$——完事！
+
+\begin{ebox}{离散逆变换法（查表法）}
+累积概率 $q_k=p_1+\cdots+p_k$。产生 $u\sim U(0,1)$，
+找使 $q_{k-1}<u\le q_k$ 的 $k$，输出 $x_k$。
 正确性：$\Pr(\text{输出 }x_k)=q_k-q_{k-1}=p_k$。
-\end{kbox}
+\end{ebox}
 
-\textbf{常见离散分布：}
+\begin{exbox}[查表法实战]
+$X$ 取值 $1,2,3$，概率分别为 $0.2,0.5,0.3$。写出抽样规则，并判断 $u=0.66$ 输出什么。
+\end{exbox}
+\begin{sol}
+累积概率 $q_1=0.2,\ q_2=0.7,\ q_3=1$。
+规则：$u\le0.2$ 输出 1；$0.2<u\le0.7$ 输出 2；$u>0.7$ 输出 3。
+$u=0.66\in(0.2,0.7]$，输出 $2$。
+\end{sol}
+
+\textbf{常见离散分布的快捷方法：}
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{两点分布} $B(1,p)$：$u\le p$ 输出 1，否则输出 0。
-  \item \textbf{二项分布} $B(n,p)$：生成 $n$ 个两点分布随机数求和。
-  \item \textbf{几何分布}：可由逆变换直接得 $X=\lceil \ln u/\ln(1-p)\rceil$，即"截尾的指数分布"。
-  \item \textbf{泊松分布} $P(\lambda)$：利用与指数分布的关系——不断累乘均匀数，
-  $X=\min\{n:\ \prod_{i=1}^{n+1}u_i<e^{-\lambda}\}$（即指数间隔的计数）。
+  \item \textbf{两点分布} $B(1,p)$：$u\le p$ 输出 1，否则 0；
+  \item \textbf{二项分布} $B(n,p)$：$n$ 个两点分布相加；
+  \item \textbf{几何分布}：$X=\big\lceil\frac{\ln u}{\ln(1-p)}\big\rceil$（指数分布"取整"）；
+  \item \textbf{泊松分布} $P(\lambda)$：连乘均匀数直到 $\prod_{i=1}^{n+1}u_i<e^{-\lambda}$，输出 $n$
+  （原理：泊松计数 = 单位时间内指数间隔事件的个数）。
 \end{itemize}
 
-\subsection{本章考点与题型}
+\subsection{本章考点地图}
 
-\begin{ebox}{高频题型}
+\begin{ebox}{高频题型清单}
 \begin{enumerate}[leftmargin=2em]
-  \item \textbf{证明逆变换法定理}（送分题，背证明）。
-  \item \textbf{给定 $F(x)$ 写出逆变换抽样公式与步骤}：如指数、柯西、威布尔，或给个分段密度先积分求 $F$、再求反函数。
-  \item \textbf{设计舍选算法}：给目标密度 $p$ 和建议密度 $f$，求最优常数 $M=\sup p/f$（求导），写出算法步骤，并指出接受概率为 $1/M$。典型：Beta、半正态、Gamma。
-  \item \textbf{变换法}：写出 Box--Muller 公式；用 $N(0,1)\to\chi^2(n)\to$ Gamma 的链条生成指定 Gamma 随机数。
-  \item \textbf{离散分布抽样}：写出查表法步骤并说明正确性。
+  \item \textbf{证明逆变换法定理}（送分题，背证明）；
+  \item \textbf{给密度→求 $F$→求 $F^{-1}$→写步骤}（指数、柯西、威布尔、多项式密度）；
+  \item \textbf{设计舍选算法}：求最优 $M=\sup p/f$（求导）、写算法、答"接受概率 $=1/M$"（Beta、半正态、Gamma）；
+  \item \textbf{变换法}：Box--Muller 公式默写；Gamma 链条（正态$\to\chi^2\to$Gamma 尺度变换）；
+  \item \textbf{离散查表法}：写规则+验证正确性。
 \end{enumerate}
 \end{ebox}

@@ -1,98 +1,162 @@
-\section{第6章\quad 重抽样方法（Bootstrap 与 Jackknife）}
+\section{第6章\quad Bootstrap 与 Jackknife}
 
-\subsection{总览}
+\subsection{故事：没有总体，怎么"重复实验"？}
 
-第 3 章评估估计量性质时假定\textbf{总体分布已知}（能反复从总体抽样）。
-现实中往往只有一份样本、总体分布 $F$ 未知。
-\textbf{Bootstrap（自助法，Efron, 1979）}的核心创意：
-\textbf{用经验分布 $F_n$（即样本本身）代替总体 $F$，从样本中有放回再抽样}，
-从而近似估计量 $\hat\theta(X_1,\dots,X_n)$ 的分布及其特征（标准误、偏差、置信区间）。
+第 3 章评估估计量的套路是"从总体反复抽样"。可现实中我们\textbf{根本不知道总体}，
+手里只有一份数据 $x_1,\dots,x_n$。重复实验做不了，难道就没法知道 $\hat\theta$ 的
+标准误了吗？
 
-\subsection{从蒙特卡洛到 Bootstrap}
+Efron（1979）的天才想法：既然不知道总体 $F$，就用\textbf{经验分布 $F_n$ 冒充总体}
+——把手里的 $n$ 个数据点各赋 $1/n$ 概率当成一个"小总体"，
+从它\textbf{有放回}地抽样来模拟"重复实验"。
+这就像"拔着自己的鞋带把自己提起来"（bootstrap 的字面意思），
+听着离谱，但理论证明：$n$ 不太小时 $F_n\approx F$，模拟出的波动确实近似真实波动。
 
-\begin{kbox}{对比记忆}
-\textbf{若 $F(x;\theta)$ 已知}（参数 MC 法）：
-\begin{enumerate}[leftmargin=2em]
-  \item 从总体 $F$ 中独立生成 $n$ 个数据，算出 $\hat\theta_1$；
-  \item 重复 $m$ 次得 $\hat\theta_1,\dots,\hat\theta_m$；
-  \item 用 $\bar{\hat\theta}=\frac1m\sum\hat\theta_i$ 和样本方差估计 $\E\hat\theta,\ \Var\hat\theta$。
-\end{enumerate}
-\textbf{若 $F$ 未知}（Bootstrap）：把"从 $F$ 抽样"替换为"\textbf{从原样本 $\{X_1,\dots,X_n\}$ 中有放回抽 $n$ 个}"：
-\begin{enumerate}[leftmargin=2em]
-  \item 有放回抽得自助样本 $X^*_{11},\dots,X^*_{1n}$，算 $\hat\theta^*_1$；
-  \item 重复 $m$ 次得 $\hat\theta^*_1,\dots,\hat\theta^*_m$；
-  \item 用 $\{\hat\theta^*_i\}$ 的分布近似 $\hat\theta$ 的分布。
-\end{enumerate}
+\begin{kbox}{MC（第3章）vs Bootstrap（本章）一句话对比}
+\begin{itemize}[leftmargin=2em]
+  \item MC 模拟：总体已知 $\to$ 从\textbf{真总体}反复抽新样本；
+  \item Bootstrap：总体未知 $\to$ 从\textbf{经验分布 $F_n$}（即原样本本身）有放回重抽。
+\end{itemize}
 \end{kbox}
 
 \subsection{Bootstrap 估计标准误与偏差}
 
-\textbf{标准误的 Bootstrap 估计}：
-\[
-\widehat{se}_{B}=\sqrt{\frac{1}{m-1}\sum_{i=1}^{m}\big(\hat\theta_i^{*}-\bar{\hat\theta}^{*}\big)^2},
-\qquad \bar{\hat\theta}^{*}=\frac1m\sum_{i=1}^m\hat\theta_i^* .
-\]
-
-\textbf{偏差的 Bootstrap 估计}：真偏差 $\mathrm{Bias}(\hat\theta)=\E\hat\theta-\theta$。
-Bootstrap 世界里"真参数"是 $\hat\theta$（由原样本算出），"估计量"是 $\hat\theta^*$，故
-\[
-\widehat{\mathrm{Bias}}_B=\bar{\hat\theta}^{*}-\hat\theta .
-\]
-\textbf{偏差修正估计}：
-\[
-\tilde\theta=\hat\theta-\widehat{\mathrm{Bias}}_B=2\hat\theta-\bar{\hat\theta}^{*}.
-\]
-
-\textbf{经典例子}：$\hat\sigma^2=\frac1n\sum(X_i-\bar X)^2$ 的真实偏差为
-$\E\hat\sigma^2-\sigma^2=-\sigma^2/n$（低估）。
-用 Bootstrap 估计该偏差：对每个自助样本算 $\hat\sigma^{2*}_i$，
-$\widehat{\mathrm{Bias}}=\bar{\hat\sigma}^{2*}-\hat\sigma^2$，应接近 $-\hat\sigma^2/n$。
-
-\subsection{Jackknife（刀切法）}
-
-逐个"剔除一个观测"构造 $n$ 个删一样本：
-$\hat\theta_{(i)}$ 为去掉 $X_i$ 后用其余 $n-1$ 个数据算的估计，
-$\bar\theta_{(\cdot)}=\frac1n\sum_i\hat\theta_{(i)}$。
-\[
-\widehat{\mathrm{Bias}}_{J}=(n-1)\big(\bar\theta_{(\cdot)}-\hat\theta\big),\qquad
-\widehat{se}_{J}=\sqrt{\frac{n-1}{n}\sum_{i=1}^{n}\big(\hat\theta_{(i)}-\bar\theta_{(\cdot)}\big)^2}.
-\]
-特点：确定性算法（无需随机抽样）、计算量 $n$ 次；
-对光滑统计量（均值、方差等）效果好，对不光滑统计量（如中位数）可能失效；
-可视为 Bootstrap 的线性近似。
-
-\subsection{Bootstrap 置信区间}
-
-设自助估计 $\hat\theta^*_1,\dots,\hat\theta^*_m$，从小到大排序，
-$\hat\theta^*_{(\alpha/2)},\hat\theta^*_{(1-\alpha/2)}$ 为经验分位数。三种常用区间：
+\begin{ebox}{核心算法（必背）}
 \begin{enumerate}[leftmargin=2em]
-  \item \textbf{标准正态（标准误）法}：假定 $\hat\theta$ 近似正态，
+  \item 从原样本 $\{x_1,\dots,x_n\}$ 中\textbf{有放回}抽 $n$ 个，得 Bootstrap 样本
+  $x^{*(1)}$，算 $\hat\theta^{*(1)}$；
+  \item 重复 $B$ 次（常取 $B=1000$）得 $\hat\theta^{*(1)},\dots,\hat\theta^{*(B)}$；
+  \item 汇总（记 $\bar\theta^*=\frac1B\sum_b\hat\theta^{*(b)}$）：
   \[
-  \big[\hat\theta-u_{1-\alpha/2}\,\widehat{se}_B,\ \hat\theta+u_{1-\alpha/2}\,\widehat{se}_B\big].
-  \]
-  \item \textbf{百分位数法}：直接取自助分布的分位数
-  \[
-  \big[\hat\theta^*_{(\alpha/2)},\ \hat\theta^*_{(1-\alpha/2)}\big].
-  \]
-  \item \textbf{枢轴量（基本）法}：用 $\hat\theta^*-\hat\theta$ 的分布近似 $\hat\theta-\theta$ 的分布，得
-  \[
-  \big[2\hat\theta-\hat\theta^*_{(1-\alpha/2)},\ 2\hat\theta-\hat\theta^*_{(\alpha/2)}\big].
+  \widehat{se}_B=\sqrt{\frac{1}{B-1}\sum_{b=1}^B\big(\hat\theta^{*(b)}-\bar\theta^*\big)^2},
+  \qquad
+  \widehat{\mathrm{Bias}}_B=\bar\theta^*-\hat\theta .
   \]
 \end{enumerate}
+偏差校正估计：$\tilde\theta=\hat\theta-\widehat{\mathrm{Bias}}_B=2\hat\theta-\bar\theta^*$。
+\end{ebox}
 
-\begin{wbox}{易混点}
-百分位法区间和枢轴法区间\textbf{端点"翻转"}：枢轴法用 $2\hat\theta$ 减去\textbf{反向}分位数。
-偏态分布下两者差异明显；正态近似法只在自助分布近似对称正态时合适。
+\paragraph{为什么偏差是 $\bar\theta^*-\hat\theta$？}
+真实世界里偏差是 $\E_F\hat\theta-\theta$："样本上的估计"平均偏离"总体真值"多少。
+Bootstrap 世界里把 $F_n$ 当总体，其"真值"就是 $\hat\theta$，
+"样本上的估计"就是 $\hat\theta^*$，于是偏差被模拟为 $\bar\theta^*-\hat\theta$。
+\textbf{记忆口诀：Bootstrap 世界整体往下平移一层}（$F\to F_n$，$\theta\to\hat\theta$，$\hat\theta\to\hat\theta^*$）。
+
+\begin{exbox}[小数据 Bootstrap 手算]
+样本为 $\{1,2,6\}$，估计量为样本均值 $\hat\theta=\bar x=3$。
+某次 Bootstrap 抽到 $B=4$ 个重抽样本：
+$(1,1,6),(2,6,6),(1,2,2),(6,2,1)$。求 $\widehat{se}_B$ 与 $\widehat{\mathrm{Bias}}_B$。
+\end{exbox}
+\begin{sol}
+各重抽样本均值：$\hat\theta^{*}=\frac{8}{3},\ \frac{14}{3},\ \frac{5}{3},\ 3$。
+\[
+\bar\theta^*=\frac{8/3+14/3+5/3+9/3}{4}=\frac{36/3}{4}=3 .
+\]
+偏差：$\widehat{\mathrm{Bias}}_B=3-3=0$（均值估计本来就无偏，合理）。
+
+标准误：偏差平方和
+$=(\tfrac{8}{3}-3)^2+(\tfrac{14}{3}-3)^2+(\tfrac{5}{3}-3)^2+(3-3)^2
+=\tfrac19+\tfrac{25}9+\tfrac{16}9=\tfrac{42}9$，
+\[
+\widehat{se}_B=\sqrt{\frac{42/9}{4-1}}=\sqrt{\frac{14}{9}}\approx1.25 .
+\]
+（实际中 $B=4$ 太小，仅为演示计算流程。）
+\end{sol}
+
+\begin{exbox}[偏差校正的经典例子]
+用 $\hat\sigma^2=\frac1n\sum(x_i-\bar x)^2$（除 $n$ 版本）估计方差。
+已知其偏差为 $-\sigma^2/n$。说明 Bootstrap 偏差校正在此的作用。
+\end{exbox}
+\begin{sol}
+$\E\hat\sigma^2=\frac{n-1}{n}\sigma^2$，偏小。
+Bootstrap 可在不知道理论公式的情况下"测出"这个负偏差：
+$\bar\theta^*-\hat\theta$ 会系统性为负，于是校正值
+$2\hat\theta-\bar\theta^*>\hat\theta$，朝真值方向上调——
+效果类似把分母 $n$ 改成 $n-1$ 的理论修正，但 Bootstrap \textbf{对任何复杂估计量都通用}。
+\end{sol}
+
+\subsection{Jackknife：Bootstrap 的"前辈"}
+
+\paragraph{想法。}不重抽，而是\textbf{每次删掉一个观测}：
+$\hat\theta_{(i)}$ 表示删去 $x_i$ 后用剩余 $n-1$ 个数据算的估计，
+$\bar\theta_{(\cdot)}=\frac1n\sum_i\hat\theta_{(i)}$。
+
+\begin{kbox}{Jackknife 公式（必背）}
+\[
+\widehat{\mathrm{Bias}}_J=(n-1)\big(\bar\theta_{(\cdot)}-\hat\theta\big),\qquad
+\widehat{se}_J=\sqrt{\frac{n-1}{n}\sum_{i=1}^n\big(\hat\theta_{(i)}-\bar\theta_{(\cdot)}\big)^2}.
+\]
+系数 $(n-1)$ 的直觉：删一个点引起的变化只有总偏差的 $\sim1/(n-1)$，要放大回去。
+只需 $n$ 次计算（Bootstrap 要 $B$ 次），但对中位数等\textbf{不光滑}的统计量失效；
+Bootstrap 更通用。
+\end{kbox}
+
+\begin{exbox}[Jackknife 手算]
+样本 $\{1,2,6\}$，$\hat\theta=\bar x=3$。求 Jackknife 偏差与标准误。
+\end{exbox}
+\begin{sol}
+删一法：$\hat\theta_{(1)}=\frac{2+6}{2}=4$，$\hat\theta_{(2)}=\frac{1+6}{2}=3.5$，
+$\hat\theta_{(3)}=\frac{1+2}{2}=1.5$；$\bar\theta_{(\cdot)}=3$。
+\[
+\widehat{\mathrm{Bias}}_J=(3-1)(3-3)=0\quad(\text{均值无偏}),
+\]
+\[
+\widehat{se}_J=\sqrt{\frac{2}{3}\big[(4-3)^2+(3.5-3)^2+(1.5-3)^2\big]}
+=\sqrt{\frac{2}{3}\times3.5}\approx1.53 .
+\]
+对照：均值标准误的经典公式 $s/\sqrt n=\sqrt{\frac{(1{-}3)^2+(2{-}3)^2+(6{-}3)^2}{2}}/\sqrt3=\sqrt7/\sqrt3\approx1.53$，
+完全一致——对均值，Jackknife 恰好还原经典公式。
+\end{sol}
+
+\subsection{Bootstrap 置信区间：三种造法}
+
+\begin{kbox}{三种区间（置信水平 $1-\alpha$；记 $\hat\theta^*_{(q)}$ 为 Bootstrap 估计值的 $q$ 分位数）}
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{正态近似法}：假定 $\hat\theta$ 近似正态，
+  \[
+  \hat\theta\pm u_{1-\alpha/2}\,\widehat{se}_B ;
+  \]
+  \item \textbf{分位数法（percentile）}：直接取 Bootstrap 分布的两端，
+  \[
+  \big[\hat\theta^*_{(\alpha/2)},\ \hat\theta^*_{(1-\alpha/2)}\big];
+  \]
+  \item \textbf{枢轴量法（basic/pivotal）}：用 $\hat\theta^*-\hat\theta$ 模拟 $\hat\theta-\theta$ 的分布，
+  \[
+  \big[2\hat\theta-\hat\theta^*_{(1-\alpha/2)},\ \ 2\hat\theta-\hat\theta^*_{(\alpha/2)}\big].
+  \]
+\end{enumerate}
+\end{kbox}
+
+\begin{wbox}{易错点：枢轴量法的"端点翻转"}
+枢轴量法里\textbf{上分位数算下限、下分位数算上限}（被 $2\hat\theta$ 减后大小颠倒）。
+考试写反端点是重灾区！检验：算完看下限是否 $<$ 上限。
 \end{wbox}
 
-\subsection{本章考点与题型}
+\begin{exbox}[三种区间数值题]
+某估计 $\hat\theta=10$，$B=1000$ 次 Bootstrap 得
+$\widehat{se}_B=1.5$，$\hat\theta^*_{(0.025)}=7.6$，$\hat\theta^*_{(0.975)}=13.2$。
+分别给出三种 95\% 置信区间。
+\end{exbox}
+\begin{sol}
+正态法：$10\pm1.96\times1.5=[7.06,\ 12.94]$。
 
-\begin{ebox}{高频题型}
+分位数法：$[7.6,\ 13.2]$。
+
+枢轴量法：$[2\times10-13.2,\ 2\times10-7.6]=[6.8,\ 12.4]$。
+
+注意枢轴量法区间整体向\textbf{左}偏——因为 Bootstrap 分布右偏
+（$13.2-10=3.2>10-7.6=2.4$），枢轴量法把这种偏斜"反向"扣回，
+分位数法则照单全收。两者差异正反映了分布的不对称。
+\end{sol}
+
+\subsection{本章考点地图}
+
+\begin{ebox}{高频题型清单}
 \begin{enumerate}[leftmargin=2em]
-  \item \textbf{叙述 Bootstrap 基本思想}：经验分布替代总体 + 有放回重抽样（概念题）。
-  \item \textbf{写出 Bootstrap 估计标准误/偏差的步骤公式}；给小数据集手算一两步。
-  \item \textbf{偏差修正}：$\tilde\theta=2\hat\theta-\bar{\hat\theta}^*$ 的来历。
-  \item \textbf{Jackknife 公式}及与 Bootstrap 的比较（确定性 vs 随机、$n$ 次 vs $m$ 次、不光滑统计量失效）。
-  \item \textbf{三种 Bootstrap 置信区间}的公式与适用场景辨析。
+  \item \textbf{默写 Bootstrap 算法}及 $\widehat{se}_B,\widehat{\mathrm{Bias}}_B,2\hat\theta-\bar\theta^*$（最高频）；
+  \item \textbf{小样本手算}：给重抽结果算 se 与偏差（如上例）；
+  \item \textbf{Jackknife 公式}及手算（注意系数 $n-1$ 和 $\frac{n-1}{n}$）；
+  \item \textbf{三种置信区间}的公式与数值计算（枢轴量法端点别写反！）；
+  \item 概念题：Bootstrap 与 MC 模拟的本质区别；Bootstrap vs Jackknife 优缺点。
 \end{enumerate}
 \end{ebox}

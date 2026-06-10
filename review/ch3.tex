@@ -1,99 +1,160 @@
 \section{第3章\quad 参数估计的统计计算}
 
-\subsection{总览}
+\subsection{故事：估计量自己也是个随机变量}
 
-本章用蒙特卡洛（Monte Carlo, MC）方法研究\textbf{估计量本身的统计性质}：
-估计量 $\hat\theta(X_1,\dots,X_n)$ 也是随机变量，它的期望、方差、MSE 在理论上往往算不出来，
-但可以"重复抽样—重复计算估计值—对估计值求样本均值/方差"来数值逼近。
+数理统计课告诉我们：用 $\bar X$ 估 $\mu$、用 $S^2$ 估 $\sigma^2$。
+但你有没有想过——\textbf{估计量本身就是随机的}（换一批样本它就变一个值），
+那它"平均估得准不准"（期望/偏差）、"波动大不大"（方差）？
+
+简单情形可以手算（$\E\bar X=\mu,\Var\bar X=\sigma^2/n$），
+可一旦估计量复杂一点（中位数？截断分布的均值？），理论分布根本推不动。
+本章的核心思想就一招：
+
+\begin{center}
+\fbox{\parbox{0.9\textwidth}{\centering
+理论推不动？那就让计算机\textbf{真的把"换一批样本"这件事重复一千遍}，\\
+看这一千个估计值的平均和波动——这就是估计量期望与方差的蒙特卡洛估计。}}
+\end{center}
 
 \subsection{用 MC 估计估计量的期望与方差}
 
-\begin{ebox}{核心算法（必背流程）}
+\begin{ebox}{核心算法（必背三步）}
 \begin{enumerate}[leftmargin=2em]
-  \item 从总体 $X$ 中随机生成一组容量为 $n$ 的数据 $X_{11},\dots,X_{1n}$，
-  计算估计值 $\hat\theta^{(1)}=\hat\theta(X_{11},\dots,X_{1n})$；
-  \item 独立重复上述步骤 $K$ 次，得 $\hat\theta^{(1)},\dots,\hat\theta^{(K)}$；
-  \item 用这 $K$ 个值的样本均值与样本方差估计 $\hat\theta$ 的期望与方差：
+  \item 从总体 $X$ 生成一组容量 $n$ 的样本 $X_{11},\dots,X_{1n}$，算估计值
+  $\hat\theta^{(1)}$；
+  \item 独立重复 $K$ 次，得 $\hat\theta^{(1)},\dots,\hat\theta^{(K)}$；
+  \item 汇总：
   \[
-  \widehat{\E(\hat\theta)}=\frac1K\sum_{k=1}^{K}\hat\theta^{(k)},\qquad
-  \widehat{\Var(\hat\theta)}=\frac1{K}\sum_{k=1}^{K}\Big(\hat\theta^{(k)}-\overline{\hat\theta}\Big)^2 .
+  \widehat{\E(\hat\theta)}=\frac1K\sum_{k=1}^K\hat\theta^{(k)},\qquad
+  \widehat{\Var(\hat\theta)}=\frac1K\sum_{k=1}^K\big(\hat\theta^{(k)}-\overline{\hat\theta}\big)^2,\qquad
+  \widehat{\mathrm{Bias}}=\overline{\hat\theta}-\theta .
   \]
 \end{enumerate}
+注意区分两个样本量：$n$ 是\textbf{每组数据的容量}（统计问题本身的），
+$K$ 是\textbf{重复实验次数}（模拟精度的）。$K$ 越大，对 $\E\hat\theta$ 的估计越准。
 \end{ebox}
 
-\textbf{例 1（验证 $\bar X$ 的性质）}：$X_i\sim N(\mu,\sigma^2)$，理论上
-$\E\bar X=\mu,\ \Var\bar X=\sigma^2/n$。MC 验证：重复 $K$ 组、每组 $n$ 个正态数，
-求每组均值，再对 $K$ 个均值求均值/方差，与理论值比较。
-\textbf{精度}：$\widehat{\E(\bar X)}$ 的误差方差约为 $\sigma^2/(nK)$，$K$ 越大越准。
+\begin{exbox}[MC 验证 $\bar X$ 的性质]
+设 $X\sim N(5,4)$，$n=25$。设计 MC 实验验证 $\E\bar X=5$、$\Var\bar X=4/25=0.16$，并说明结果的精度。
+\end{exbox}
+\begin{sol}
+\textbf{实验设计}：
+(i) 生成 $25$ 个 $N(5,4)$ 随机数（$x=5+2z$，$z$ 由 Box--Muller 产生），算 $\bar x^{(1)}$；
+(ii) 重复 $K=1000$ 次；
+(iii) 算 $\frac1K\sum\bar x^{(k)}$（应 $\approx5$）和
+$\frac1K\sum(\bar x^{(k)}-\overline{\bar x})^2$（应 $\approx0.16$）。
 
-\textbf{例 2（截断分布的均值估计）}：对截断于 $[0,1]$ 的分布 $X_{[0,1]}$，
-其均值 $\theta$ 的估计 $\hat\theta=\frac1n\sum X_i$，理论分布复杂，可用 MC 评估
-$\hat\theta$ 的偏差与方差。
+\textbf{精度}：$\overline{\bar x}$ 自身的标准差为
+$\sqrt{\Var(\bar X)/K}=\sqrt{0.16/1000}\approx0.0126$，
+故 MC 结果会在 $5\pm0.013$ 左右波动，与理论值吻合即验证成功。
+\end{sol}
 
-\textbf{用 MC 比较估计量优劣}：对同一参数的多个估计量
-（如均值 vs 中位数估计正态 $\mu$），分别 MC 估计各自的 $\mathrm{MSE}=\mathrm{Bias}^2+\Var$，
-小者更优。
+\begin{exbox}[MC 比较两个估计量]
+正态总体 $N(\mu,\sigma^2)$ 下，样本均值 $\bar X$ 与样本中位数 $m$ 都能估 $\mu$。
+设计 MC 实验比较谁更好。
+\end{exbox}
+\begin{sol}
+评价标准用 $\mathrm{MSE}=\mathrm{Bias}^2+\Var$。
+\textbf{设计}：
+(i) 生成 $n$ 个 $N(\mu,\sigma^2)$ 数据，同时算出 $\bar x^{(k)}$ 和 $m^{(k)}$；
+(ii) 重复 $K$ 次；
+(iii) 分别算
+$\widehat{\mathrm{MSE}}(\bar X)=\frac1K\sum(\bar x^{(k)}-\mu)^2$、
+$\widehat{\mathrm{MSE}}(m)=\frac1K\sum(m^{(k)}-\mu)^2$，小者更优。
 
-\subsection{置信区间回顾与覆盖率的 MC 估计}
+\textbf{预期结论}：正态总体下两者都近似无偏，但
+$\Var(m)\approx\frac{\pi}{2}\cdot\frac{\sigma^2}{n}\approx1.57\,\Var(\bar X)$，
+均值胜出。（但若总体是重尾的柯西分布，均值彻底失效、中位数稳健——MC 实验能直观展示这一点。）
+\end{sol}
 
-\subsubsection{单总体正态均值的置信区间}
+\subsection{置信区间：先复习公式，再用 MC 检验它}
 
-设 $X_1,\dots,X_n\overset{iid}{\sim}N(\mu,\sigma^2)$，置信水平 $1-\alpha$：
+\paragraph{故事继续。}
+置信区间承诺"以 $95\%$ 的概率罩住真参数"。这个承诺靠的是推导时的分布假设
+（正态总体、大样本近似……）。假设不满足时，承诺还兑现吗？
+——又是理论难算、模拟好办的问题。先把要检验的"公式"列全。
+
+\begin{kbox}{单总体正态 $N(\mu,\sigma^2)$ 的区间（置信水平 $1-\alpha$）}
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{$\sigma^2$ 已知}：枢轴量 $\dfrac{\bar X-\mu}{\sigma/\sqrt n}\sim N(0,1)$，区间
+  \item \textbf{估 $\mu$，$\sigma^2$ 已知}：枢轴量 $\frac{\bar X-\mu}{\sigma/\sqrt n}\sim N(0,1)$，
   \[
-  \Big[\bar X-u_{1-\alpha/2}\frac{\sigma}{\sqrt n},\ \bar X+u_{1-\alpha/2}\frac{\sigma}{\sqrt n}\Big].
+  \bar X\pm u_{1-\alpha/2}\,\frac{\sigma}{\sqrt n}.
   \]
-  \item \textbf{$\sigma^2$ 未知}：用样本方差 $S^2$ 替代，枢轴量
-  $T=\dfrac{\bar X-\mu}{S/\sqrt n}\sim t(n-1)$，区间
+  \item \textbf{估 $\mu$，$\sigma^2$ 未知}：枢轴量 $\frac{\bar X-\mu}{S/\sqrt n}\sim t(n-1)$，
   \[
-  \Big[\bar X-t_{1-\alpha/2}(n-1)\frac{S}{\sqrt n},\ \bar X+t_{1-\alpha/2}(n-1)\frac{S}{\sqrt n}\Big].
+  \bar X\pm t_{1-\alpha/2}(n-1)\,\frac{S}{\sqrt n}.
   \]
-  \item \textbf{方差 $\sigma^2$ 的区间}：$\dfrac{(n-1)S^2}{\sigma^2}\sim\chi^2(n-1)$，区间
-  $\Big[\dfrac{(n-1)S^2}{\chi^2_{1-\alpha/2}},\ \dfrac{(n-1)S^2}{\chi^2_{\alpha/2}}\Big]$。
+  \item \textbf{估 $\sigma^2$}：枢轴量 $\frac{(n-1)S^2}{\sigma^2}\sim\chi^2(n-1)$，
+  \[
+  \Big[\frac{(n-1)S^2}{\chi^2_{1-\alpha/2}(n-1)},\ \frac{(n-1)S^2}{\chi^2_{\alpha/2}(n-1)}\Big].
+  \]
 \end{itemize}
+\end{kbox}
 
-\subsubsection{总体比例的（渐近）置信区间}
-
-$X_i\overset{iid}{\sim}B(1,p)$，由中心极限定理 $\bar X\overset{\cdot}{\sim}N\big(p,\frac{p(1-p)}{n}\big)$，得
-\[
-\Big[\hat p-u_{1-\alpha/2}\sqrt{\tfrac{\hat p(1-\hat p)}{n}},\ \hat p+u_{1-\alpha/2}\sqrt{\tfrac{\hat p(1-\hat p)}{n}}\Big],\qquad \hat p=\bar X .
-\]
-
-\subsubsection{两总体的置信区间}
-
-两独立正态总体 $N(\mu_1,\sigma_1^2),N(\mu_2,\sigma_2^2)$：
+\begin{kbox}{总体比例与两总体}
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{均值差 $\mu_1-\mu_2$（方差已知）}：
-  $\bar X-\bar Y\pm u_{1-\alpha/2}\sqrt{\frac{\sigma_1^2}{n_1}+\frac{\sigma_2^2}{n_2}}$。
-  \item \textbf{均值差（方差未知但相等）}：合并方差
+  \item \textbf{比例 $p$（大样本）}：由 CLT，$\hat p=\bar X\overset{\cdot}{\sim}N\big(p,\frac{p(1-p)}{n}\big)$，
+  \[
+  \hat p\pm u_{1-\alpha/2}\sqrt{\frac{\hat p(1-\hat p)}{n}}.
+  \]
+  \item \textbf{两正态均值差（方差已知）}：$\bar X-\bar Y\pm u_{1-\alpha/2}\sqrt{\frac{\sigma_1^2}{n_1}+\frac{\sigma_2^2}{n_2}}$；
+  \item \textbf{两正态均值差（方差未知但相等）}：合并方差
   $S_w^2=\frac{(n_1-1)S_1^2+(n_2-1)S_2^2}{n_1+n_2-2}$，
-  $\bar X-\bar Y\pm t_{1-\alpha/2}(n_1{+}n_2{-}2)\,S_w\sqrt{\frac1{n_1}+\frac1{n_2}}$。
-  \item \textbf{方差比 $\sigma_1^2/\sigma_2^2$}：枢轴量
-  $\frac{S_1^2/\sigma_1^2}{S_2^2/\sigma_2^2}\sim F(n_1-1,n_2-1)$。
+  \[
+  \bar X-\bar Y\pm t_{1-\alpha/2}(n_1{+}n_2{-}2)\,S_w\sqrt{\tfrac1{n_1}+\tfrac1{n_2}};
+  \]
+  \item \textbf{方差比}：$\frac{S_1^2/\sigma_1^2}{S_2^2/\sigma_2^2}\sim F(n_1-1,n_2-1)$。
 \end{itemize}
+\end{kbox}
 
-\subsubsection{置信区间覆盖率的 MC 估计}
+\begin{exbox}[置信区间计算]
+某正态总体抽得 $n=16$ 个数据，$\bar x=10.2$，$s=2.4$。求 $\mu$ 的 $95\%$ 置信区间
+（$t_{0.975}(15)=2.131$）。
+\end{exbox}
+\begin{sol}
+$\sigma$ 未知用 $t$ 区间：
+\[
+10.2\pm2.131\times\frac{2.4}{\sqrt{16}}=10.2\pm2.131\times0.6=10.2\pm1.28,
+\]
+即 $[8.92,\ 11.48]$。
+含义：按这种方法构造的区间，长期来看约 $95\%$ 的次数能罩住真值 $\mu$
+（不是"$\mu$ 有 95\% 概率在这个具体区间里"——$\mu$ 是常数！）。
+\end{sol}
 
-\begin{ebox}{算法：检验"区间到底有没有 95\% 的把握"}
+\subsection{用 MC 估计置信区间的覆盖率}
+
+\begin{ebox}{算法（必背）}
+给定真参数（如 $\mu_0,\sigma_0$）与名义水平 $1-\alpha$：
 \begin{enumerate}[leftmargin=2em]
-  \item 给定真参数 $\theta$，从总体生成一组样本，按公式算出区间 $[\hat\theta_L^{(1)},\hat\theta_U^{(1)}]$；
-  \item 重复 $K$ 次；
-  \item 统计覆盖频率
-  $\widehat{\text{覆盖率}}=\frac1K\sum_{k=1}^K I\big(\hat\theta_L^{(k)}\le\theta\le\hat\theta_U^{(k)}\big)$，
-  与名义水平 $1-\alpha$ 比较。
+  \item 从总体生成容量 $n$ 的样本，按公式算出区间 $[\hat\theta_L^{(k)},\hat\theta_U^{(k)}]$；
+  \item 记录指示变量 $I_k=I\big(\hat\theta_L^{(k)}\le\theta_0\le\hat\theta_U^{(k)}\big)$；
+  \item 重复 $K$ 次，覆盖率估计为 $\frac1K\sum_k I_k$，与 $1-\alpha$ 对照。
 \end{enumerate}
-若总体并非正态（稳健性研究）或样本量小，覆盖率可能明显偏离 $1-\alpha$——这正是 MC 模拟的价值。
 \end{ebox}
 
-\subsection{本章考点与题型}
+\begin{exbox}[覆盖率实验设计（综合题）]
+设计 MC 实验考察："总体其实是指数分布 $\mathrm{Exp}(1)$，却照用正态 $t$ 区间估均值"
+时，$95\%$ 区间的实际覆盖率如何？
+\end{exbox}
+\begin{sol}
+真均值 $\theta_0=1$。
+(i) 用逆变换 $x=-\ln u$ 生成 $n$ 个 $\mathrm{Exp}(1)$ 数据；
+(ii) 算 $\bar x,s$，构造 $\bar x\pm t_{0.975}(n-1)s/\sqrt n$；
+(iii) 记录是否覆盖 $1$；重复 $K=1000$ 次求覆盖频率。
 
-\begin{ebox}{高频题型}
+\textbf{预期结论}：$n$ 小（如 $n=10$）时总体严重偏态，覆盖率会低于 $95\%$
+（区间"失信"）；$n$ 增大后由 CLT 覆盖率回升到接近 $95\%$。
+这个实验展示了 MC 方法检验统计程序\textbf{稳健性}的威力。
+\end{sol}
+
+\subsection{本章考点地图}
+
+\begin{ebox}{高频题型清单}
 \begin{enumerate}[leftmargin=2em]
-  \item \textbf{叙述 MC 估计估计量期望/方差的算法步骤}（三步流程，必背）。
-  \item \textbf{设计 MC 实验比较两个估计量}（用 MSE 作标准，写清生成—计算—汇总）。
-  \item \textbf{写出各种置信区间公式}并说明枢轴量及其分布（正态均值已知/未知方差、方差、比例、两总体）。
-  \item \textbf{设计 MC 实验估计置信区间的覆盖率}，并解释结果含义。
-  \item 概念题：无偏性、有效性、相合性、MSE 分解 $\mathrm{MSE}=\mathrm{Bias}^2+\Var$。
+  \item \textbf{默写 MC 估计估计量期望/方差的三步算法}（分清 $n$ 与 $K$！）；
+  \item \textbf{设计 MC 实验比较估计量}（标准：MSE$=$Bias$^2+$Var）；
+  \item \textbf{置信区间公式默写+数值计算}（四套枢轴量：$u,t,\chi^2,F$，外加比例的 CLT 近似）；
+  \item \textbf{设计覆盖率 MC 实验}并解释覆盖率偏离名义水平的含义；
+  \item 概念题：置信区间的频率解释；无偏性/有效性/相合性。
 \end{enumerate}
 \end{ebox}

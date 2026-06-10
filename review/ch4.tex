@@ -1,134 +1,213 @@
 \section{第4章\quad 假设检验的统计计算}
 
-\subsection{总览}
+\subsection{故事：检验的"灵敏度"也得靠模拟来量}
 
-本章两大主题：
-\begin{enumerate}[leftmargin=2em]
-  \item 用 MC 模拟\textbf{估计检验的第一类错误概率 $\alpha$ 与功效 $1-\beta$}（很多检验的功效没有显式公式）；
-  \item 一批\textbf{非参数检验}：拟合优度 $\chi^2$ 检验、K--S 检验、随机性检验（变号/游程）、两样本检验（Mann--Whitney U、两样本 K--S、游程）、独立性检验（列联表 $\chi^2$、相关系数检验）。
-\end{enumerate}
+假设检验像一台"测谎仪"：$H_0$ 是嫌疑人的供词，数据是证据。
+仪器有两个关键指标：
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{误报率}（第一类错误概率 $\alpha$）：供词是真的却报警；
+  \item \textbf{灵敏度}（功效 $1-\beta$）：供词是假的能否报警。
+\end{itemize}
+$\alpha$ 是我们设定的，但\textbf{功效往往没有公式可算}——它取决于真实参数离 $H_0$
+有多远、样本量多大、总体什么形状。第一部分就教你用 MC 把这两个指标"量"出来。
+第二部分集结一批\textbf{非参数检验}：不依赖总体正态假设的实用检验法。
 
 \subsection{MC 估计第一类错误概率与功效}
 
-回顾：$\alpha=\Pr(\text{拒绝 }H_0\mid H_0\text{ 真})$（弃真），
-$1-\beta=\Pr(\text{拒绝 }H_0\mid H_1\text{ 真})$（功效）。
+\paragraph{引例（贯穿本节）。}
+$X_1,\dots,X_n\overset{iid}{\sim}N(\mu,1)$，检验
+\[
+H_0:\mu=0\quad vs\quad H_1:\mu\ne0 .
+\]
+统计量 $T=\sqrt n\,\bar X$，$H_0$ 下 $T\sim N(0,1)$，
+水平 $\alpha$ 的拒绝域为 $|T|>u_{1-\alpha/2}$。
 
-\textbf{引例}：$X_i\overset{iid}{\sim}N(\mu,1)$，检验 $H_0:\mu=0$ vs $H_1:\mu\ne0$，
-统计量 $T=\sqrt n\,\bar X$，$H_0$ 下 $T\sim N(0,1)$，拒绝域 $|T|>u_{1-\alpha/2}$。
-
-\begin{ebox}{MC 估计第一类错误率}
+\begin{ebox}{MC 估计第一类错误率（在 $H_0$ 下做实验）}
 \begin{enumerate}[leftmargin=2em]
-  \item \textbf{在 $H_0$ 成立的参数下}（如 $\mu=0$）生成一组容量 $n$ 的样本，计算统计量，记录是否落入拒绝域；
-  \item 重复 $K$ 次；
-  \item 估计 $\hat\alpha=\dfrac{\text{拒绝次数}}{K}$，应接近名义水平 $\alpha$。
+  \item 取 $\mu=0$（$H_0$ 为真），生成 $n$ 个 $N(0,1)$ 数据，算 $T$，记录是否 $|T|>u_{1-\alpha/2}$；
+  \item 重复 $K$ 次（如 $K=1000$）；
+  \item $\hat\alpha=\dfrac{\text{拒绝次数}}{K}$，应接近名义 $\alpha$。
 \end{enumerate}
 \end{ebox}
 
-\begin{ebox}{MC 估计功效}
+\begin{ebox}{MC 估计功效（在 $H_1$ 下做实验）}
 \begin{enumerate}[leftmargin=2em]
-  \item \textbf{在 $H_1$ 成立的某个具体参数下}（如 $\mu=0.5$）生成样本、算统计量、记录是否拒绝；
+  \item 取 $H_1$ 中某个具体的 $\mu=\mu_1\ne0$（如 $0.5$），生成数据、算 $T$、记录是否拒绝；
   \item 重复 $K$ 次，$\widehat{1-\beta}=\dfrac{\text{拒绝次数}}{K}$。
 \end{enumerate}
-功效是备择参数的函数（功效函数）：$\mu$ 离 0 越远、$n$ 越大，功效越接近 1。
-$K$ 越大估计越稳定（如 $K=1000$、$\alpha=0.05$ 时 $\hat\alpha$ 的标准差约
-$\sqrt{0.05\times0.95/1000}\approx0.007$）。
+对一串 $\mu_1$ 值各算一遍，连起来就是\textbf{功效函数曲线}：
+$\mu_1$ 离 0 越远、$n$ 越大，功效越接近 1。
 \end{ebox}
 
-\subsection{单样本拟合优度检验}
+\begin{wbox}{最容易混的一点}
+估 $\alpha$：数据在 \textbf{$H_0$ 的参数}下生成；
+估功效：数据在 \textbf{$H_1$ 的具体参数}下生成。
+两个实验的"判断是否拒绝"步骤完全相同，区别只在数据从哪儿来！
+\end{wbox}
 
-\subsubsection{$\chi^2$ 拟合优度检验（总体分布的卡方检验）}
+\begin{exbox}[功效模拟实战]
+上述引例中取 $n=25,\ \alpha=0.05,\ \mu_1=0.5$。
+(1) 写出 MC 估计功效的步骤；(2) 本例其实有理论功效，算出来对照。
+\end{exbox}
+\begin{sol}
+(1) 每轮：生成 $25$ 个 $N(0.5,1)$ 数据 $\to$ $T=5\bar x$ $\to$ 记录 $|T|>1.96$ 与否；
+重复 $K=1000$ 轮，功效估计为拒绝频率。
 
-$H_0$：总体服从某给定分布 $F_0$。
-把取值范围分成 $r$ 个区间，$n_i$ 为落入第 $i$ 区间的观测频数，
-$p_i$ 为 $F_0$ 下落入第 $i$ 区间的理论概率，统计量
+(2) $\mu=0.5$ 时 $T=\sqrt n\bar X\sim N(\sqrt n\mu,1)=N(2.5,1)$，
 \[
-\chi^2=\sum_{i=1}^{r}\frac{(n_i-np_i)^2}{np_i}\ \overset{H_0,\,n\to\infty}{\sim}\ \chi^2(r-1-s),
+1-\beta=\Pr(|T|>1.96)=\Pr(T>1.96)+\Pr(T<-1.96)
+\approx\Phi(2.5-1.96)+\Phi(-1.96-2.5)
 \]
-其中 $s$ 为用样本估计的未知参数个数。$\chi^2$ 过大则拒绝 $H_0$。
-\textbf{注意}：要求每格期望频数 $np_i\ge5$（否则合并区间）。
-
-\subsubsection{单样本 K--S 检验}
-
-直接比较经验分布函数 $F_n(x)=\frac1n\#\{i:X_i\le x\}$ 与假设分布 $F_0(x)$：
 \[
-D_n=\sup_x|F_n(x)-F_0(x)| .
+=\Phi(0.54)+\Phi(-4.46)\approx0.705+0.000\approx0.71 .
 \]
-$D_n$ 过大拒绝 $H_0$。与 $\chi^2$ 相比：K--S 不用分组、适合连续分布、对小样本更有效；
-$\chi^2$ 适合离散/分组数据。
+模拟结果应在 $0.71$ 附近波动（标准差约 $\sqrt{0.71\times0.29/1000}\approx0.014$）。
+\end{sol}
+
+\subsection{单样本检验：数据像不像某个分布？}
+
+\subsubsection{$\chi^2$ 拟合优度检验}
+
+\paragraph{想法。}把数轴切成 $r$ 个格子，数一数每格观测频数 $n_i$
+与"假设分布预言的频数" $np_i$ 差多远，差得太离谱就不信 $H_0$。
+
+\begin{kbox}{统计量与拒绝规则}
+\[
+\chi^2=\sum_{i=1}^{r}\frac{(n_i-np_i)^2}{np_i}\ \overset{H_0}{\approx}\ \chi^2(r-1-s),
+\]
+$s$ 为用样本估计的未知参数个数。$\chi^2>\chi^2_{1-\alpha}(r-1-s)$ 时拒绝。
+\textbf{使用条件}：每格期望频数 $np_i\ge5$（不足就合并相邻格子）。
+\end{kbox}
+
+\begin{exbox}[骰子均匀吗？]
+掷骰子 120 次，六个点数出现 $25,18,21,16,24,16$ 次。
+在 $\alpha=0.05$ 下检验骰子是否均匀（$\chi^2_{0.95}(5)=11.07$）。
+\end{exbox}
+\begin{sol}
+$H_0$：各面概率 $1/6$，期望频数 $np_i=20$。
+\[
+\chi^2=\frac{(25-20)^2+(18-20)^2+(21-20)^2+(16-20)^2+(24-20)^2+(16-20)^2}{20}
+=\frac{25+4+1+16+16+16}{20}=3.9 .
+\]
+自由度 $r-1=5$（无估计参数，$s=0$）。$3.9<11.07$，不拒绝 $H_0$：没有证据说骰子不均匀。
+\end{sol}
+
+\subsubsection{单样本 Kolmogorov--Smirnov（K--S）检验}
+
+不分格子，直接比较\textbf{经验分布函数} $F_n(x)=\frac1n\#\{i:X_i\le x\}$
+与假设分布 $F_0(x)$ 的最大距离：
+\[
+D_n=\sup_x|F_n(x)-F_0(x)| ,
+\]
+$D_n$ 超过临界值则拒绝。
+\textbf{与 $\chi^2$ 对比}：K--S 无需分组、保留全部信息、小样本也好用，适合\textbf{连续}分布；
+$\chi^2$ 适合离散/分组数据、大样本。
 
 \subsubsection{随机性检验：变号检验与游程检验}
 
-检验序列是否"随机"（无趋势、无相关）：
+检验一列数据是不是"纯随机"（无趋势、无周期）。
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{变号（符号）检验}：看相邻观测的差的符号变化次数是否符合随机序列的期望；
-  \item \textbf{游程检验}：把序列按高于/低于中位数化为 0--1 序列，
-  \textbf{游程}=连续相同符号的最大段。设 1 有 $m$ 个、0 有 $n$ 个，游程总数 $R$ 在随机假设下
+  \item \textbf{变号检验}：数相邻差值的符号变化次数，与随机序列的理论期望比较；
+  \item \textbf{游程检验}：按高于/低于中位数把序列变成 0--1 串，
+  \textbf{游程}=连续相同符号的一段。设 1 有 $m$ 个、0 有 $n$ 个，总游程数 $R$ 满足
   \[
   \E R=\frac{2mn}{m+n}+1,\qquad
-  \Var R=\frac{2mn(2mn-m-n)}{(m+n)^2(m+n-1)} ,
+  \Var R=\frac{2mn(2mn-m-n)}{(m+n)^2(m+n-1)},
   \]
-  大样本时 $\dfrac{R-\E R}{\sqrt{\Var R}}\overset{\cdot}{\sim}N(0,1)$。游程过多或过少都拒绝随机性。
+  大样本下 $Z=\frac{R-\E R}{\sqrt{\Var R}}\overset{\cdot}{\sim}N(0,1)$。
+  游程太少（数据成片聚集，有趋势）或太多（剧烈交替，有负相关）都拒绝随机性。
 \end{itemize}
 
-\subsection{两样本非参数检验}
+\subsection{两样本检验：两组数据来自同一总体吗？}
 
-设两组独立样本 $X_1,\dots,X_m$ 与 $Y_1,\dots,Y_n$，检验两总体分布是否相同。
+\subsubsection{Mann--Whitney U 检验（秩和检验）}
 
-\subsubsection{Mann--Whitney U 检验（曼—惠特尼）}
+\paragraph{想法。}把两组数据混在一起排名次。如果两总体相同，
+两组的名次应当"你中有我、我中有你"；若 $X$ 组名次系统性偏大，说明 $X$ 总体位置偏高。
 
-把两组混合排序求秩。记 $W$ 为 $X$ 组的秩和（Wilcoxon 秩和），
+\begin{kbox}{统计量}
+记 $W$ 为 $X$ 组（容量 $m$）在混合样本中的秩和，
 \[
-U=W-\frac{m(m+1)}{2}\quad(\text{即 }X\text{ 超过 }Y\text{ 的对数}).
+U=W-\frac{m(m+1)}{2}\qquad(\text{等于"}X_i>Y_j\text{ 的对子数"}).
 \]
-$H_0$（同分布）下
+$H_0$（同分布）下 $\E U=\frac{mn}{2}$，$\Var U=\frac{mn(m+n+1)}{12}$，
+大样本用 $Z=\frac{U-\E U}{\sqrt{\Var U}}\overset{\cdot}{\sim}N(0,1)$。
+适合检验\textbf{位置（中位数）差异}，完全不需要正态假设。
+\end{kbox}
+
+\begin{exbox}[U 检验计算]
+$X$ 组：$1.1,\,2.3,\,3.5$（$m=3$）；$Y$ 组：$1.8,\,4.2,\,5.0,\,5.6$（$n=4$）。
+计算 $U$ 并写出大样本检验的做法。
+\end{exbox}
+\begin{sol}
+混合排序：$1.1(X),1.8(Y),2.3(X),3.5(X),4.2(Y),5.0(Y),5.6(Y)$，
+$X$ 组的秩为 $1,3,4$，$W=8$。
 \[
-\E U=\frac{mn}{2},\qquad \Var U=\frac{mn(m+n+1)}{12},
+U=W-\frac{m(m+1)}{2}=8-6=2 .
 \]
-大样本用正态近似 $Z=\dfrac{U-\E U}{\sqrt{\Var U}}\overset{\cdot}{\sim}N(0,1)$。
-适用于检验\textbf{位置（中位数）差异}，不要求正态。
+（验证：逐对数 $X_i>Y_j$ 的对子：$2.3>1.8$、$3.5>1.8$，共 2 对，一致。）
+$\E U=\frac{3\times4}{2}=6$，$\Var U=\frac{3\times4(3+4+1)}{12}=8$，
+$Z=\frac{2-6}{\sqrt8}\approx-1.41$。$|Z|<1.96$，$\alpha=0.05$ 下不拒绝两总体相同
+（样本太小，实际应查精确表）。
+\end{sol}
 
-\subsubsection{两样本 K--S 检验}
+\subsubsection{两样本 K--S 检验与两样本游程检验}
 
-\[
-D_{m,n}=\sup_x\big|F_m(x)-G_n(x)\big| ,
-\]
-两经验分布函数的最大偏差，过大则拒绝"两总体同分布"。对位置、刻度、形状差异都敏感。
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{两样本 K--S}：$D_{m,n}=\sup_x|F_m(x)-G_n(x)|$，
+  两个经验分布函数的最大差距。对位置、尺度、形状的差异\textbf{全都敏感}，是"全能型"检验。
+  \item \textbf{两样本游程检验}：混合排序后按来源标成 0--1 串数游程 $R$。
+  两总体相同 $\Rightarrow$ 充分混杂 $\Rightarrow$ $R$ 大；$R$ 显著偏小则拒绝。
+  $\E R,\Var R$ 公式同前（$m,n$ 为两组容量）。
+\end{itemize}
 
-\subsubsection{两样本游程检验}
-
-把混合样本从小到大排序，按来自 $X$ 还是 $Y$ 标记成 0--1 序列数游程 $R$。
-若两总体相同，两种标记充分混杂，$R$ 应较大；$R$ 显著偏小则拒绝。
-均值方差公式同上节（$m,n$ 为两组样本量）。
-
-\subsection{独立性检验}
+\subsection{独立性检验：两个变量有没有关系？}
 
 \subsubsection{列联表 $\chi^2$ 检验}
 
-$r\times c$ 列联表，检验行变量与列变量独立。
-$n_{ij}$ 为观测频数，行和 $n_{i\cdot}$、列和 $n_{\cdot j}$，独立时期望频数
-$\hat e_{ij}=\dfrac{n_{i\cdot}n_{\cdot j}}{n}$，统计量
+\begin{kbox}{统计量}
+$r\times c$ 列联表，观测频数 $n_{ij}$，行和 $n_{i\cdot}$、列和 $n_{\cdot j}$、总数 $n$。
+$H_0$（行列独立）下第 $(i,j)$ 格的期望频数为
 \[
-\chi^2=\sum_{i=1}^{r}\sum_{j=1}^{c}\frac{(n_{ij}-\hat e_{ij})^2}{\hat e_{ij}}
-\ \overset{H_0}{\sim}\ \chi^2\big((r-1)(c-1)\big).
+\hat e_{ij}=\frac{n_{i\cdot}\,n_{\cdot j}}{n}\qquad(\text{独立}\Rightarrow p_{ij}=p_{i\cdot}p_{\cdot j}),
 \]
+\[
+\chi^2=\sum_{i,j}\frac{(n_{ij}-\hat e_{ij})^2}{\hat e_{ij}}
+\ \overset{H_0}{\approx}\ \chi^2\big((r-1)(c-1)\big).
+\]
+\end{kbox}
+
+\begin{exbox}[列联表检验计算]
+调查 200 人，性别与"是否喜欢某产品"的 $2\times2$ 表为：
+男（喜欢 60，不喜欢 40），女（喜欢 40，不喜欢 60）。
+$\alpha=0.05$ 检验性别与偏好是否独立（$\chi^2_{0.95}(1)=3.84$）。
+\end{exbox}
+\begin{sol}
+行和：男 100、女 100；列和：喜欢 100、不喜欢 100。期望频数全部为
+$\hat e_{ij}=\frac{100\times100}{200}=50$。
+\[
+\chi^2=\frac{(60-50)^2}{50}\times2+\frac{(40-50)^2}{50}\times2=2+2+2+2=8 .
+\]
+自由度 $(2-1)(2-1)=1$，$8>3.84$，拒绝独立性：性别与偏好显著相关。
+\end{sol}
 
 \subsubsection{相关系数检验}
 
-二维正态样本检验 $H_0:\rho=0$。样本相关系数 $r$，统计量
+二维正态样本，检验 $H_0:\rho=0$。样本相关系数 $r$，统计量
 \[
 T=\frac{r\sqrt{n-2}}{\sqrt{1-r^2}}\ \overset{H_0}{\sim}\ t(n-2),
 \]
-$|T|$ 过大拒绝（即认为线性相关显著）。
-（非正态时可用 Spearman 秩相关检验。）
+$|T|>t_{1-\alpha/2}(n-2)$ 则认为线性相关显著。非正态数据可改用 Spearman 秩相关。
 
-\subsection{本章考点与题型}
+\subsection{本章考点地图}
 
-\begin{ebox}{高频题型}
+\begin{ebox}{高频题型清单}
 \begin{enumerate}[leftmargin=2em]
-  \item \textbf{概念题}：两类错误、功效的定义；为什么需要 MC 估计功效。
-  \item \textbf{叙述 MC 估计 $\alpha$/功效的算法步骤}（注意：估 $\alpha$ 在 $H_0$ 下生成数据，估功效在 $H_1$ 下生成数据——最易混！）。
-  \item \textbf{$\chi^2$ 拟合优度计算题}：给频数表算 $\chi^2$ 与自由度（记得减去估计参数个数 $s$）。
-  \item \textbf{选择合适的非参数检验}：单样本分布拟合用 $\chi^2$/K--S；两样本位置差异用 U 检验；两样本是否同分布用两样本 K--S/游程；随机性用游程检验；列联表独立性用 $\chi^2((r-1)(c-1))$。
-  \item \textbf{U 检验/游程检验的正态近似计算}：代均值方差公式算 $Z$ 并查表下结论。
+  \item \textbf{默写 MC 估计 $\alpha$/功效的算法}，强调数据生成参数的区别（最高频）；
+  \item \textbf{$\chi^2$ 拟合优度数值题}：算统计量、定自由度（减 $s$！）、查表下结论；
+  \item \textbf{列联表数值题}：期望频数 $\hat e_{ij}=n_{i\cdot}n_{\cdot j}/n$、自由度 $(r-1)(c-1)$；
+  \item \textbf{U 检验/游程检验}：秩和→$U$→正态近似；游程数的均值方差公式；
+  \item \textbf{方法选择题}：场景对号入座——
+  拟合优度（$\chi^2$/K--S）、随机性（游程）、两样本位置（U）、两样本同分布（两样本 K--S/游程）、独立性（列联表 $\chi^2$/相关系数 $t$ 检验）。
 \end{enumerate}
 \end{ebox}

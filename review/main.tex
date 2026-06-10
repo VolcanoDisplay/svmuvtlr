@@ -9,6 +9,10 @@
 \newtcolorbox{kbox}[1]{colback=blue!4,colframe=blue!55!black,title={#1},fonttitle=\bfseries,breakable}
 \newtcolorbox{ebox}[1]{colback=green!4,colframe=green!45!black,title={#1},fonttitle=\bfseries,breakable}
 \newtcolorbox{wbox}[1]{colback=red!4,colframe=red!55!black,title={#1},fonttitle=\bfseries,breakable}
+\newcounter{exm}[section]
+\newtcolorbox{exbox}[1][]{colback=orange!5,colframe=orange!75!black,breakable,
+  title={\refstepcounter{exm}例题 \thesection.\theexm\quad #1},fonttitle=\bfseries}
+\newenvironment{sol}{\par\noindent\textbf{【解】}}{\par}
 
 \newtheorem{thm}{定理}[section]
 \newtheorem{defn}[thm]{定义}
