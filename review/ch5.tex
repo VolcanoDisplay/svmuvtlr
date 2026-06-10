@@ -405,6 +405,136 @@ $[1,\ e/2\approx1.36]$ 间变化，远比原函数 $e^x\in[1,\,2.72]$ 平稳—�
 \end{itemize}
 \end{kbox}
 
+\subsection{做题训练营：照葫芦画瓢，动笔才算会}
+
+下面每种方法配两道阶梯题：第 1 题是把正文例题\textbf{换个数字}的"描红"题，
+照着模板填空就能做出来；第 2 题略有变形。
+\textbf{正确用法}：先遮住【提示】和【解】，自己动笔写满 3 分钟，卡住了再看提示，
+最后对照解答。看会的题不算会，写出来的才算。
+
+\begin{exbox}[练习 1A（对偶·描红）]
+估计 $J=\int_0^1 x^2\,\d x$。已知 $\Var(U^2)=\frac{4}{45}$，
+$\Cov(U^2,(1-U)^2)=-\frac{7}{90}\approx-0.0778$（题面给定）。写出对偶估计量，并与同样函数求值次数的朴素法比较方差。
+\end{exbox}
+\begin{sol}
+【提示】完全照搬正文 $e^x$ 例的三步：写估计量 $\to$ 代 $\Var\big(\frac{X+Y}2\big)$
+公式 $\to$ 除以朴素法的 $\frac{\Var}{2n}$。
+
+【解】\textbf{第一步}：$\hat J_{\text a}=\frac1n\sum_i\frac{U_i^2+(1-U_i)^2}{2}$（$x^2$ 在 $[0,1]$ 单调增，可用）。
+
+\textbf{第二步}：一对的方差
+$\Var\big(\frac{X+Y}2\big)=\frac{\frac4{45}+\frac4{45}+2\times(-0.0778)}{4}
+=\frac{0.1778-0.1556}{4}\approx0.00556$，
+故 $\Var(\hat J_{\text a})\approx\frac{0.00556}{n}$。
+
+\textbf{第三步}：朴素法用 $2n$ 个点：$\frac{4/45}{2n}=\frac{0.0444}{n}$。
+缩减比 $0.0444/0.00556\approx \textbf{8 倍}$。
+\end{sol}
+
+\begin{exbox}[练习 1B（对偶·判断）]
+下列函数在 $[0,1]$ 上用对偶变量法，哪些\textbf{保证}有效？
+(a) $f(x)=e^{-x}$；(b) $f(x)=\sin(2\pi x)$；(c) $f(x)=(x-\tfrac12)^2$。
+\end{exbox}
+\begin{sol}
+【提示】只问一件事：$f$ 单调吗？
+
+【解】(a) 单调减，有效（单调减也行——$f(U)$ 大时 $f(1-U)$ 小，照样负相关）。
+(b) 先升后降，不保证。
+(c) 关于 $\frac12$ 对称，$f(U)=f(1-U)$ 完全\textbf{正}相关，对偶法毫无缩减（这是最爱考的反例）。
+\end{sol}
+
+\begin{exbox}[练习 2A（控制变量·描红）]
+估计 $\E\,e^{U^2}$（$U\sim U(0,1)$），取控制变量 $Y=U^2$（$\E U^2=\frac13$ 已知）。
+题面给定 $\Var(e^{U^2})\approx0.245$，$\Cov(e^{U^2},U^2)\approx0.141$，$\Var(U^2)=\frac4{45}$。
+求 $c^*$ 和方差缩减后的估计量。
+\end{exbox}
+\begin{sol}
+【提示】两个公式：$c^*=\frac{\Cov}{\Var Y}$；估计量 $=\frac1n\sum[X_i-c^*(Y_i-\mu_Y)]$。
+
+【解】\textbf{第一步}：$c^*=\frac{0.141}{4/45}=0.141\times\frac{45}{4}\approx1.59$。
+
+\textbf{第二步}：估计量 $\hat\theta=\frac1n\sum_i\big[e^{U_i^2}-1.59\,(U_i^2-\tfrac13)\big]$。
+
+\textbf{第三步}（验缩减）：$\rho=\frac{0.141}{\sqrt{0.245\times4/45}}\approx0.955$，
+$\Var$ 降为原来的 $1-\rho^2\approx0.088$，约缩减 11 倍。
+\end{sol}
+
+\begin{exbox}[练习 2B（控制变量·推导）]
+从 $\Var[X-c(Y-\mu_Y)]$ 出发，推导最优 $c^*$ 并证明最小方差为 $\Var X(1-\rho^2)$。
+（不许翻书，这是高频大题原题。）
+\end{exbox}
+\begin{sol}
+【提示】展开成 $c$ 的二次函数，求导置零，代回。
+
+【解】$\Var X(c)=\Var X-2c\Cov(X,Y)+c^2\Var Y$。
+对 $c$ 求导：$-2\Cov+2c\Var Y=0\Rightarrow c^*=\frac{\Cov(X,Y)}{\Var Y}$。
+代回：
+$\Var X(c^*)=\Var X-\frac{\Cov^2}{\Var Y}
+=\Var X\Big(1-\frac{\Cov^2}{\Var X\Var Y}\Big)=\Var X\,(1-\rho^2)$。$\blacksquare$
+\end{sol}
+
+\begin{exbox}[练习 3（条件期望·描红）]
+估计 $\theta=\Pr(U+V\le1)$，其中 $U,V$ 独立 $\sim U(0,1)$
+（真值显然是 $\frac12$，练手用）。用条件期望法改进指示函数估计量。
+\end{exbox}
+\begin{sol}
+【提示】固定 $U$ 后，"$ V\le 1-U$"的概率能笔算吗？
+
+【解】\textbf{第一步}：朴素法 $X=I(U+V\le1)$，$\Var X=\frac12\cdot\frac12=\frac14$。
+
+\textbf{第二步}：$\E[X\mid U]=\Pr(V\le1-U)=1-U$（$V$ 均匀）。
+改用 $\hat\theta=\frac1n\sum(1-U_i)$。
+
+\textbf{第三步}：$\Var(1-U)=\frac1{12}$，缩减比 $\frac{1/4}{1/12}=3$ 倍，且省一半随机数。
+\end{sol}
+
+\begin{exbox}[练习 4（重要抽样·选密度）]
+估计 $\int_0^1 x e^x\,\d x$。备选密度：(a) $g_1(x)=1$；(b) $g_2(x)=2x$；
+(c) $g_3(x)=\frac{2}{e^2-1}\,e^{2x}$？哪个更好？说明理由（不用算）。
+\end{exbox}
+\begin{sol}
+【提示】比的是谁的形状更像 $f(x)=xe^x$，即 $f/g$ 谁更接近常数。
+
+【解】$f(x)=xe^x$ 在 0 处为 0、随 $x$ 增长。
+(a) 均匀密度完全没跟随 $f$ 的形状，最差；
+(b) $f/g_2=\frac{e^x}{2}\in[\frac12,\frac e2]$，比值变化约 2.7 倍，不错；
+(c) $f/g_3\propto x e^{-x}$，在 $[0,1]$ 内从 0 变到 $e^{-1}$，比值在 0 附近趋于 0，反而波动大。
+\textbf{选 (b)}。教训：不是"指数配指数"就好，看的是\textbf{比值平不平}。
+\end{sol}
+
+\begin{exbox}[练习 5（方法匹配·概念题）]
+为下列场景各选一种最合适的方差缩减方法（一句话理由）：
+(1) 比较两种库存策略的平均成本之差；
+(2) 估 $\int_0^1\frac{1}{1+x}\d x$，提示可用 $Y=U$；
+(3) 估 $\Pr(Z>4)$，$Z\sim N(0,1)$；
+(4) 估 $\int_0^1 e^{-x}\d x$，只许用一半的随机数达到同样精度。
+\end{exbox}
+\begin{sol}
+【解】(1) \textbf{公共随机数}——比较问题，同一串随机数制造正相关；
+(2) \textbf{控制变量}——给了期望已知的相关变量 $U$；
+(3) \textbf{重要抽样}——尾概率，均匀/原密度抽样几乎全落空，把密度移到 4 附近；
+(4) \textbf{对偶变量}——$e^{-x}$ 单调，一个 $U$ 当两个用。
+\end{sol}
+
+\subsection{考前速记卡：一页背完第五章}
+
+\begin{kbox}{六种方法速记卡（考前最后一眼看这里）}
+\begin{center}
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{|p{2.1cm}|p{4.2cm}|p{3.4cm}|p{3.6cm}|}
+\hline
+\textbf{方法} & \textbf{估计量长相} & \textbf{何时用} & \textbf{易错点/口诀}\\\hline
+对偶变量 & $\frac1n\sum\frac{f(U_i)+f(1-U_i)}{2}$ & $f$ 单调 & 对称函数无效；和式要负相关\\\hline
+控制变量 & $\frac1n\sum[X_i-c^*(Y_i-\mu_Y)]$，$c^*=\frac{\Cov}{\Var Y}$ & 有期望已知的相关变量 & 最小方差 $=\Var X(1-\rho^2)$，推导三行背熟\\\hline
+条件期望 & $\frac1n\sum\E(X\mid Y_i)$ & 一部分期望可笔算 & 全方差分解；能笔算就别抽签\\\hline
+重要抽样 & $\frac1n\sum\frac{f(X_i)}{g(X_i)},\ X_i\sim g$ & $f$ 集中/尾概率 & $g$ 像 $f$、尾巴不能比 $f$ 轻\\\hline
+分层抽样 & 各层定额抽样再加权 & 题面说"分段" & 消灭层间方差；按层方差分配更优\\\hline
+公共随机数 & 两系统用同一串 $U$ & \textbf{比较}两系统 & 差要\textbf{正}相关（和才要负）\\\hline
+\end{tabular}
+\end{center}
+两条总心法：\textbf{(1) 别浪费已有信息；(2) 能确定的部分绝不交给运气。}
+\end{kbox}
+
 \subsection{本章考点地图}
 
 \begin{ebox}{高频题型清单}
