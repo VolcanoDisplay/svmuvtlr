@@ -1,0 +1,104 @@
+\section{第2章\quad 随机向量随机数的抽样方法}
+
+\subsection{总览}
+
+把第 1 章的思想推广到多维：生成服从联合分布
+$f(x_1,\dots,x_p)$ 的随机向量。三种方法：\textbf{变换法、条件分布法、舍选法}；
+离散随机向量用\textbf{条件分布法}（典型：多项分布）。
+
+\subsection{变换抽样法（含 Jacobi 行列式）}
+
+\begin{kbox}{密度变换公式（基础铺垫）}
+设 $p$ 维随机向量 $\bm\xi=(\xi_1,\dots,\xi_p)$ 有密度 $f(x_1,\dots,x_p)$，
+作可逆变换 $\bm\eta=g(\bm\xi)$，逆变换 $\bm\xi=g^{-1}(\bm\eta)$，则 $\bm\eta$ 的密度为
+\[
+p(\bm y)=f\big(g^{-1}(\bm y)\big)\cdot\big|J\big| ,\qquad
+J=\det\!\left(\frac{\partial x_i}{\partial y_j}\right)
+\]
+即"原密度 $\times$ 逆变换的 Jacobi 行列式绝对值"。
+\end{kbox}
+
+\textbf{核心例子：二维正态 $N_2(\bm\mu,\Sigma)$ 的生成。}
+设 $\xi_1,\xi_2\overset{iid}{\sim}N(0,1)$，记
+\[
+\bm\mu=\begin{pmatrix}\mu_1\\\mu_2\end{pmatrix},\quad
+\Sigma=\begin{pmatrix}\sigma_1^2 & \rho\sigma_1\sigma_2\\ \rho\sigma_1\sigma_2 & \sigma_2^2\end{pmatrix}.
+\]
+令
+\[
+\eta_1=\mu_1+\sigma_1\xi_1,\qquad
+\eta_2=\mu_2+\sigma_2\big(\rho\,\xi_1+\sqrt{1-\rho^2}\,\xi_2\big),
+\]
+则 $(\eta_1,\eta_2)\sim N_2(\bm\mu,\Sigma)$。
+（验证：$\E\eta_i=\mu_i$，$\Var\eta_i=\sigma_i^2$，
+$\Cov(\eta_1,\eta_2)=\sigma_1\sigma_2\rho$，且线性组合保持正态。）
+
+\textbf{一般 $p$ 维正态}：求 $\Sigma$ 的 Cholesky 分解 $\Sigma=LL^{T}$（$L$ 下三角），
+取 $\bm Z=(Z_1,\dots,Z_p)^T$ 为独立标准正态，则
+\[
+\bm X=\bm\mu+L\bm Z\ \sim\ N_p(\bm\mu,\Sigma).
+\]
+原理：$\Cov(\bm X)=L\,\Cov(\bm Z)\,L^T=LL^T=\Sigma$。
+
+\subsection{条件分布法（最常考）}
+
+\begin{kbox}{基本思想：把联合分布拆成"链"}
+\[
+f(x_1,x_2,\dots,x_p)=f_1(x_1)\,f_2(x_2\mid x_1)\cdots f_p(x_p\mid x_1,\dots,x_{p-1}).
+\]
+于是只要会抽每个一维条件分布，就能逐个坐标地生成整个向量。
+\end{kbox}
+
+\begin{ebox}{算法步骤}
+\begin{enumerate}[leftmargin=2em]
+  \item 从边际分布 $f_1(x_1)$ 抽 $x_1$；
+  \item 从条件分布 $f_2(x_2\mid x_1)$ 抽 $x_2$；
+  \item \dots 依此类推，直到抽出 $x_p$。输出 $(x_1,\dots,x_p)$。
+\end{enumerate}
+\end{ebox}
+
+\textbf{例（二维正态的条件分布法）}：
+$X=(X_1,X_2)\sim N_2(\bm\mu,\Sigma)$ 时，
+\[
+X_1\sim N(\mu_1,\sigma_1^2),\qquad
+X_2\mid X_1=x_1\ \sim\ N\!\Big(\mu_2+\rho\frac{\sigma_2}{\sigma_1}(x_1-\mu_1),\ \sigma_2^2(1-\rho^2)\Big).
+\]
+先抽 $x_1$，再代入条件正态抽 $x_2$，结果与变换法一致。
+\textbf{多维正态的条件分布公式}（需记）：把 $\bm X,\bm\mu,\Sigma$ 分块为
+$\bm X=\binom{\bm X_1}{\bm X_2}$，$\Sigma=\begin{pmatrix}\Sigma_{11}&\Sigma_{12}\\\Sigma_{21}&\Sigma_{22}\end{pmatrix}$，则
+\[
+\bm X_2\mid \bm X_1=\bm x_1\sim N\big(\bm\mu_2+\Sigma_{21}\Sigma_{11}^{-1}(\bm x_1-\bm\mu_1),\ \Sigma_{22}-\Sigma_{21}\Sigma_{11}^{-1}\Sigma_{12}\big).
+\]
+
+\subsection{多维舍选抽样法}
+
+与一维完全平行：目标联合密度 $p(\bm x)$，建议联合密度 $f(\bm x)$（容易抽，如各分量独立均匀），
+$M\ge\sup p/f$。抽 $\bm y\sim f$、$u\sim U(0,1)$，若 $u\le \dfrac{p(\bm y)}{Mf(\bm y)}$ 接受。
+常用于在不规则区域（如圆盘、单纯形）上抽均匀点：在包住它的方块里抽均匀点，落在区域内则接受。
+
+\subsection{离散随机向量：条件分布法与多项分布}
+
+\textbf{例（放球问题）}：把若干球独立等概率放入三个篮子，$X$ 为入 A 篮个数、$Y$ 为入 B 篮个数，
+先抽 $X\sim B(n,1/3)$，再抽 $Y\mid X=x\sim B(n-x,1/2)$。
+
+\textbf{多项分布} $\mathrm{Mult}(n;p_1,\dots,p_r)$：盒中 $r$ 种颜色比例 $p_1,\dots,p_r$，
+有放回取 $n$ 次，$X_i$ 为第 $i$ 色出现次数。两种生成方式：
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{逐次分类法}：做 $n$ 次独立的 $r$ 点离散抽样（查表法），统计各类次数；
+  \item \textbf{条件分布法}：$X_1\sim B(n,p_1)$；
+  $X_2\mid X_1=x_1\sim B\big(n-x_1,\frac{p_2}{1-p_1}\big)$；一般地
+  \[
+  X_k\mid X_1,\dots,X_{k-1}\ \sim\ B\Big(n-\textstyle\sum_{i<k}x_i,\ \frac{p_k}{1-\sum_{i<k}p_i}\Big).
+  \]
+\end{enumerate}
+
+\subsection{本章考点与题型}
+
+\begin{ebox}{高频题型}
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{用变换法生成二维正态}：写出 $\eta_1,\eta_2$ 的表达式并验证期望、方差、相关系数（如 $\mu_1=\mu_2=0,\sigma_1=\sigma_2=2,\rho=0.8$ 的数值题）。
+  \item \textbf{条件分布法生成二维正态}：写出 $X_2\mid X_1$ 的条件正态参数，给出两步算法。
+  \item \textbf{条件分布法生成离散向量}：放球/多项分布，写出逐分量的条件二项分布。
+  \item \textbf{Jacobi 公式推导}：给出变换求新密度（如证明 Box--Muller）。
+\end{enumerate}
+\end{ebox}

@@ -1,0 +1,174 @@
+\section{第1章\quad 一维（非均匀）随机数的生成}
+
+\subsection{总览：这一章在干什么}
+
+计算机能直接产生的只有 $U(0,1)$ 均匀随机数（由线性同余等伪随机数发生器产生）。
+本章解决：\textbf{如何把均匀随机数加工成服从任意目标分布 $F(x)$ 的随机数。}
+五大方法：\textbf{逆变换法、舍选（接受—拒绝）法、变换法、复合法、近似法}；
+以及离散分布的抽样。
+
+\begin{defn}[随机数]
+设 $X$ 有分布函数 $F(x)$，从 $F$ 中随机抽样得到的序列 $\{x_i\}$ 称为该分布的随机数序列，$x_i$ 称为分布 $F(x)$ 的随机数。
+\end{defn}
+
+\subsection{逆变换法（最重要、最常考）}
+
+\begin{kbox}{定理 1.1.1（逆变换法原理）}
+设连续型随机变量 $\eta$ 的分布函数 $F(x)$ 连续且严格单调上升，反函数 $F^{-1}$ 存在。则
+\begin{enumerate}[leftmargin=2em]
+  \item $F(\eta)\sim U(0,1)$；
+  \item 若 $U\sim U(0,1)$，则 $F^{-1}(U)$ 的分布函数恰为 $F(x)$。
+\end{enumerate}
+\end{kbox}
+
+\begin{proof}[证明（必会！）]
+(1) 记 $G(u)=\Pr(F(\eta)\le u)$。当 $u\in[0,1]$ 时，由 $F$ 严格单调，
+$G(u)=\Pr(\eta\le F^{-1}(u))=F(F^{-1}(u))=u$；$u<0$ 时 $G=0$，$u>1$ 时 $G=1$。
+这正是 $U(0,1)$ 的分布函数。
+
+(2) $\Pr(F^{-1}(U)\le x)=\Pr(U\le F(x))=F(x)$（因为 $U$ 均匀且 $F(x)\in[0,1]$）。
+\end{proof}
+
+\begin{ebox}{算法步骤}
+\begin{enumerate}[leftmargin=2em]
+  \item 产生 $u\sim U(0,1)$；
+  \item 计算 $x=F^{-1}(u)$，则 $x$ 即为目标分布的随机数。
+\end{enumerate}
+\end{ebox}
+
+\textbf{经典例子（务必熟练手算）：}
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{指数分布} $\mathrm{Exp}(\lambda)$：$F(x)=1-e^{-\lambda x}$，解 $u=1-e^{-\lambda x}$ 得
+  \[
+  x=-\frac{1}{\lambda}\ln(1-u)\quad\text{（由于 }1-U\overset{d}{=}U\text{，也常写 }x=-\tfrac1\lambda\ln u).
+  \]
+  \item \textbf{柯西分布}：$F(x)=\frac12+\frac1\pi\arctan x \Rightarrow x=\tan\big(\pi(u-\tfrac12)\big)$。
+  \item \textbf{威布尔分布} $F(x)=1-e^{-(x/\beta)^\alpha}\Rightarrow x=\beta(-\ln u)^{1/\alpha}$。
+\end{itemize}
+
+\begin{wbox}{易错点}
+逆变换法的局限：很多分布（正态、Gamma、Beta 等）的分布函数没有显式表达式，
+$F^{-1}$ 无法解析求出，因此\textbf{不能直接用逆变换法}，需要下面的方法。
+\end{wbox}
+
+\subsection{舍选抽样法（接受—拒绝法）}
+
+\begin{kbox}{基本思想}
+目标密度 $p(x)$ 不好直接抽，就找一个\textbf{容易抽样}的"建议密度" $f(x)$ 和常数 $M\ (\ge 1)$，使
+\[
+p(x)\le M f(x)\quad\text{对一切 }x ,
+\]
+即 $p$ 被 $Mf$ "罩住"。记 $h(x)=\dfrac{p(x)}{Mf(x)}\in[0,1]$。
+\end{kbox}
+
+\begin{ebox}{算法步骤}
+\begin{enumerate}[leftmargin=2em]
+  \item 由 $f(x)$ 产生随机数 $y$；
+  \item 产生 $u\sim U(0,1)$（与 $y$ 独立）；
+  \item 若 $u\le h(y)=\dfrac{p(y)}{Mf(y)}$，则\textbf{接受} $x=y$；否则\textbf{舍弃}，返回第 1 步。
+\end{enumerate}
+被接受的 $x$ 恰好服从密度 $p(x)$。每次试验被接受的概率为 $1/M$，
+平均需要 $M$ 次试验得到一个有效样本，故 \textbf{$M$ 越小（越接近 1）效率越高}。
+\end{ebox}
+
+\begin{rmk}
+直观理解：在曲线 $Mf(x)$ 下方均匀撒点，只保留落在 $p(x)$ 下方的点，
+这些点的横坐标自然按 $p$ 的"高矮"分布。
+\end{rmk}
+
+\textbf{例 1（Beta 分布）}：生成 $\mathrm{Beta}(\alpha,\beta)$（$\alpha,\beta>1$）。
+取 $f(x)=1$（即 $U(0,1)$ 密度），因 Beta 密度在众数 $x_0=\frac{\alpha-1}{\alpha+\beta-2}$ 处最大，取
+$M=p(x_0)$，则算法为：产生 $y,u\sim U(0,1)$，若 $u\le p(y)/M$ 接受。
+
+\textbf{例 2（半正态法生成标准正态）}：
+对 $|Z|$ 的密度 $p(x)=\sqrt{\frac{2}{\pi}}e^{-x^2/2}\,(x>0)$，
+取建议密度 $f(x)=e^{-x}$（$\mathrm{Exp}(1)$），可算得
+\[
+\frac{p(x)}{f(x)}=\sqrt{\frac{2}{\pi}}\,e^{x-x^2/2}\le\sqrt{\frac{2e}{\pi}}=:M\approx1.32 ,
+\]
+（最大值在 $x=1$ 处取得）。接受后再以等概率 $\pm$ 随机赋符号即得 $N(0,1)$。
+
+\textbf{例 3（Gamma 分布，$\alpha>1$）}：生成 $\mathrm{Gamma}(\alpha,1)$ 可取
+$\mathrm{Exp}(1/\alpha)$ 作建议分布（均值匹配），再按舍选法接受。
+若需 $\mathrm{Gamma}(\alpha,\gamma)$，先生成 $\eta\sim\mathrm{Gamma}(\alpha,1)$，
+则 $\eta/\gamma\sim\mathrm{Gamma}(\alpha,\gamma)$。
+
+\begin{wbox}{易错点}
+\begin{itemize}[leftmargin=2em]
+  \item $M$ 必须满足 $M\ge\sup_x p(x)/f(x)$，通常通过求导找 $p/f$ 的最大值确定最优 $M$。
+  \item 建议密度 $f$ 的支撑必须覆盖 $p$ 的支撑（$p(x)>0$ 处必须 $f(x)>0$）。
+  \item 无界区间上不能取"均匀建议分布"，因为常数函数在 $(-\infty,\infty)$ 上积分发散。
+\end{itemize}
+\end{wbox}
+
+\subsection{变换抽样法}
+
+利用已知分布之间的函数关系："会抽 $\xi$，且 $\eta=g(\xi)$，则把 $\xi$ 的样本代入 $g$ 即得 $\eta$ 的样本"。
+
+\textbf{重要例子：}
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Box--Muller 法生成正态}：设 $U_1,U_2\overset{iid}{\sim}U(0,1)$，则
+  \[
+  Z_1=\sqrt{-2\ln U_1}\cos(2\pi U_2),\qquad Z_2=\sqrt{-2\ln U_1}\sin(2\pi U_2)
+  \]
+  是两个\textbf{独立}的 $N(0,1)$ 随机数。再令 $X=\mu+\sigma Z$ 得 $N(\mu,\sigma^2)$。
+  \item \textbf{卡方分布}：$Z_1,\dots,Z_n\overset{iid}{\sim}N(0,1)\Rightarrow\sum Z_i^2\sim\chi^2(n)$。
+  原理：$Z_i^2\sim\mathrm{Gamma}(1/2,1/2)$，由 Gamma 可加性求和得 $\mathrm{Gamma}(n/2,1/2)=\chi^2(n)$。
+  \item \textbf{Gamma 尺度变换}：$\xi\sim\mathrm{Gamma}(\alpha,\gamma)\Rightarrow\xi/a\sim\mathrm{Gamma}(\alpha,a\gamma)$。
+  例如生成 $\mathrm{Gamma}(1/2,3)$：先取 $Z\sim N(0,1)$，则 $Z^2\sim\mathrm{Gamma}(1/2,1/2)=\chi^2(1)$，再令 $\eta=Z^2/6\sim\mathrm{Gamma}(1/2,3)$。
+  \item \textbf{对数正态}：$Z\sim N(\mu,\sigma^2)\Rightarrow e^{Z}\sim\mathrm{LogNormal}(\mu,\sigma^2)$。
+  \item \textbf{$t$ 与 $F$}：$t(n)=\dfrac{N(0,1)}{\sqrt{\chi^2(n)/n}}$，$F(m,n)=\dfrac{\chi^2(m)/m}{\chi^2(n)/n}$（分子分母独立）。
+\end{itemize}
+
+\subsection{复合抽样法}
+
+若目标密度可写成混合形式
+\[
+p(x)=\sum_{i=1}^{k} w_i\, p_i(x),\qquad w_i>0,\ \sum w_i=1 ,
+\]
+其中每个 $p_i$ 都容易抽样，则：
+\begin{ebox}{算法步骤}
+\begin{enumerate}[leftmargin=2em]
+  \item 以概率 $w_1,\dots,w_k$ 随机选一个分支 $i$（离散抽样）；
+  \item 从 $p_i(x)$ 中抽一个数作为输出。
+\end{enumerate}
+\end{ebox}
+连续混合同理：$p(x)=\int p(x\mid y) g(y)\d y$ 时，先抽 $y\sim g$，再抽 $x\sim p(\cdot\mid y)$。
+
+\subsection{近似抽样法}
+
+利用中心极限定理近似生成正态随机数：取 $U_1,\dots,U_{12}\overset{iid}{\sim}U(0,1)$，
+因 $\E U_i=\frac12,\ \Var U_i=\frac1{12}$，故
+\[
+Z=\sum_{i=1}^{12}U_i-6\ \approx\ N(0,1).
+\]
+优点是简单，缺点是只是近似（尾部精度差），现代多用 Box--Muller 或舍选法。
+
+\subsection{离散分布随机数的抽样}
+
+\begin{kbox}{离散逆变换法（查表法）}
+设 $\Pr(X=x_k)=p_k$，累积概率 $q_k=p_1+\cdots+p_k$。
+产生 $u\sim U(0,1)$，找到使 $q_{k-1}<u\le q_k$ 的 $k$，输出 $x_k$。
+正确性：$\Pr(\text{输出 }x_k)=q_k-q_{k-1}=p_k$。
+\end{kbox}
+
+\textbf{常见离散分布：}
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{两点分布} $B(1,p)$：$u\le p$ 输出 1，否则输出 0。
+  \item \textbf{二项分布} $B(n,p)$：生成 $n$ 个两点分布随机数求和。
+  \item \textbf{几何分布}：可由逆变换直接得 $X=\lceil \ln u/\ln(1-p)\rceil$，即"截尾的指数分布"。
+  \item \textbf{泊松分布} $P(\lambda)$：利用与指数分布的关系——不断累乘均匀数，
+  $X=\min\{n:\ \prod_{i=1}^{n+1}u_i<e^{-\lambda}\}$（即指数间隔的计数）。
+\end{itemize}
+
+\subsection{本章考点与题型}
+
+\begin{ebox}{高频题型}
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{证明逆变换法定理}（送分题，背证明）。
+  \item \textbf{给定 $F(x)$ 写出逆变换抽样公式与步骤}：如指数、柯西、威布尔，或给个分段密度先积分求 $F$、再求反函数。
+  \item \textbf{设计舍选算法}：给目标密度 $p$ 和建议密度 $f$，求最优常数 $M=\sup p/f$（求导），写出算法步骤，并指出接受概率为 $1/M$。典型：Beta、半正态、Gamma。
+  \item \textbf{变换法}：写出 Box--Muller 公式；用 $N(0,1)\to\chi^2(n)\to$ Gamma 的链条生成指定 Gamma 随机数。
+  \item \textbf{离散分布抽样}：写出查表法步骤并说明正确性。
+\end{enumerate}
+\end{ebox}

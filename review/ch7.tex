@@ -1,0 +1,119 @@
+\section{第7章\quad EM 算法}
+
+\subsection{总览与动机}
+
+极大似然估计要求最大化\textbf{观测数据}的对数似然。但当数据\textbf{不完整}
+——存在未观测到的\textbf{隐变量}（latent variable）或缺失数据时，
+观测似然中含有"对隐变量求和/积分"的项，直接最大化非常困难。
+
+\textbf{EM 算法（Expectation--Maximization, Dempster--Laird--Rubin, 1977）}的思路：
+完整数据的似然容易最大化，但隐变量不知道——那就用\textbf{当前参数估计}下隐变量的
+条件分布，先算完整数据对数似然的\textbf{条件期望}（E 步），再对它\textbf{最大化}（M 步），
+反复迭代直到收敛。
+
+\subsection{算法框架（必背）}
+
+记观测数据 $X=\{x_1,\dots,x_n\}$，隐变量 $Y$，完整数据 $Z=(X,Y)$。
+完整数据似然 $L(Z;\theta)=p(X,Y;\theta)$。
+
+\begin{kbox}{EM 迭代（第 $i$ 步）}
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{E 步}：在当前估计 $\theta^{(i-1)}$ 下计算 Q 函数
+  \[
+  Q(\theta,\theta^{(i-1)})=\E\big[\log L(Z;\theta)\,\big|\,X;\theta^{(i-1)}\big]
+  =\begin{cases}
+  \displaystyle\int \log p(X,y;\theta)\,p(y\mid X;\theta^{(i-1)})\d y, & Y\text{ 连续},\\[2mm]
+  \displaystyle\sum_{y} \log p(X,y;\theta)\,p(y\mid X;\theta^{(i-1)}), & Y\text{ 离散}.
+  \end{cases}
+  \]
+  即：对完整数据对数似然，关于"隐变量在旧参数下的后验分布"求期望。
+  \item \textbf{M 步}：更新参数
+  \[
+  \theta^{(i)}=\arg\max_{\theta} Q(\theta,\theta^{(i-1)}).
+  \]
+  \item 重复 E、M 两步直至 $\|\theta^{(i)}-\theta^{(i-1)}\|$ 或似然增量小于阈值。
+\end{itemize}
+\end{kbox}
+
+\begin{kbox}{收敛性质}
+EM 每步迭代使观测似然\textbf{单调不减}：$\log p(X;\theta^{(i)})\ge\log p(X;\theta^{(i-1)})$
+（可由 Jensen 不等式证明）。因此算法必收敛到似然的驻点，
+但\textbf{只保证局部极大值，不保证全局最优}；对初值敏感，实际中常取多组初值取最优。
+\end{kbox}
+
+\subsection{经典例子一：两硬币问题}
+
+A、B 两枚硬币正面概率分别为 $p_A,p_B$。做 6 组试验，每组掷 5 次，
+观测 $X_i=(x_{i1},\dots,x_{i5})$（$x_{ij}=1$ 表正面）；
+\textbf{不知道每组用的是哪枚硬币}（隐变量 $Y_i\in\{A,B\}$）。
+
+\begin{itemize}[leftmargin=2em]
+  \item 若 $Y_i$ 已知：MLE 平凡——分别统计 A、B 投出的正面频率即可。
+  \item $Y_i$ 未知则用 EM。记第 $i$ 组正面数 $h_i$（共 $5$ 次）：
+  \item \textbf{E 步}：用当前 $(p_A^{(t)},p_B^{(t)})$ 算每组来自 A 的后验概率（贝叶斯公式）
+  \[
+  \mu_i=\Pr(Y_i=A\mid X_i)=
+  \frac{(p_A^{(t)})^{h_i}(1-p_A^{(t)})^{5-h_i}}
+  {(p_A^{(t)})^{h_i}(1-p_A^{(t)})^{5-h_i}+(p_B^{(t)})^{h_i}(1-p_B^{(t)})^{5-h_i}} .
+  \]
+  （先验取 $1/2$。）
+  \item \textbf{M 步}：按后验概率"软分配"正面数并重新估频率
+  \[
+  p_A^{(t+1)}=\frac{\sum_i \mu_i h_i}{\sum_i \mu_i\cdot 5},\qquad
+  p_B^{(t+1)}=\frac{\sum_i (1-\mu_i) h_i}{\sum_i (1-\mu_i)\cdot 5}.
+  \]
+\end{itemize}
+
+\subsection{经典例子二：多项分布参数的 EM}
+
+观测频数服从多项分布、但某些类别的概率由公共参数 $\theta$ 通过混合方式表达，
+且某个观测格子实际上是两个"隐格子"之和（如经典的 197 只动物四类问题：
+概率 $(\frac12+\frac\theta4,\ \frac{1-\theta}4,\ \frac{1-\theta}4,\ \frac\theta4)$）。
+做法：把第一格拆成 $\frac12$ 与 $\frac\theta4$ 两个隐格子，
+E 步算分到隐格子的期望频数，M 步对完整数据多项似然求 $\theta$ 的显式 MLE。
+
+\subsection{经典例子三：正态分布缺失数据}
+
+样本 $X_1,\dots,X_n\sim N(\mu,\sigma^2)$，部分观测缺失。
+E 步：缺失值用其条件期望（当前参数下即 $\mu^{(t)}$）填补，
+二阶矩用 $\E(X^2)=\mu^{(t)2}+\sigma^{(t)2}$；
+M 步：用"完整化"后的充分统计量更新 $\mu,\sigma^2$。
+（注意：不能简单用 $\mu^{(t)}$ 填值再当真数据算方差，要用二阶矩的条件期望，否则低估方差。）
+
+\subsection{经典例子四：混合模型（重点）}
+
+\textbf{一维两分量高斯混合}：密度
+\[
+p(x;\theta)=\pi\,\phi(x;\mu_1,\sigma_1^2)+(1-\pi)\,\phi(x;\mu_2,\sigma_2^2),
+\]
+隐变量 $y_i\in\{1,2\}$ 表示 $x_i$ 来自哪个分量。
+
+\begin{ebox}{高斯混合的 EM（必背）}
+\textbf{E 步}：计算"责任"（后验分量概率）
+\[
+\gamma_{i1}=\frac{\pi^{(t)}\phi(x_i;\mu_1^{(t)},\sigma_1^{2(t)})}
+{\pi^{(t)}\phi(x_i;\mu_1^{(t)},\sigma_1^{2(t)})+(1-\pi^{(t)})\phi(x_i;\mu_2^{(t)},\sigma_2^{2(t)})},
+\qquad \gamma_{i2}=1-\gamma_{i1}.
+\]
+\textbf{M 步}：加权更新（$k=1,2$）
+\[
+\pi^{(t+1)}=\frac1n\sum_i\gamma_{i1},\qquad
+\mu_k^{(t+1)}=\frac{\sum_i\gamma_{ik}x_i}{\sum_i\gamma_{ik}},\qquad
+\sigma_k^{2(t+1)}=\frac{\sum_i\gamma_{ik}\big(x_i-\mu_k^{(t+1)}\big)^2}{\sum_i\gamma_{ik}}.
+\]
+\end{ebox}
+
+多维高斯混合（GMM）完全类似：均值换成向量加权平均、方差换成加权协方差矩阵
+$\Sigma_k=\frac{\sum_i\gamma_{ik}(x_i-\mu_k)(x_i-\mu_k)^T}{\sum_i\gamma_{ik}}$。
+
+\subsection{本章考点与题型}
+
+\begin{ebox}{高频题型}
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{叙述 EM 算法的一般步骤}：写出 Q 函数定义、E 步、M 步、停止准则（必背）。
+  \item \textbf{概念题}：为什么需要 EM（隐变量使观测似然难以直接最大化）；收敛性（似然单调不减、只到局部极值、初值敏感）。
+  \item \textbf{两硬币问题}：写出 E 步后验概率与 M 步更新公式，或代数值迭代一步。
+  \item \textbf{高斯混合 EM}：写出责任 $\gamma_{ik}$ 与 M 步三组更新公式；解释"软聚类"含义。
+  \item \textbf{多项分布/缺失数据 EM}：按"拆隐格子→期望频数→显式 MLE"流程推导。
+\end{enumerate}
+\end{ebox}

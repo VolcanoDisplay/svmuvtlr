@@ -1,0 +1,138 @@
+\section{模拟试题（附详细解答）}
+
+\noindent\textbf{说明}：覆盖第 1--7 章主要考点，题型为：概念简答、算法设计、推导证明、计算题。建议先独立完成再看解答。
+
+\subsection*{一、简答题（每题 6 分）}
+
+\textbf{1.} 叙述逆变换法生成连续型分布随机数的原理与步骤，并指出其适用前提。
+
+\textbf{2.} 什么是检验的第一类错误、第二类错误与功效？如何用蒙特卡洛方法估计某检验的功效？
+
+\textbf{3.} 简述 Bootstrap 方法的基本思想，并说明它与第 3 章"已知总体分布的蒙特卡洛模拟"的区别。
+
+\textbf{4.} 简述 EM 算法的适用场景与 E 步、M 步的含义，并说明其收敛性质。
+
+\subsection*{二、算法设计题（每题 10 分）}
+
+\textbf{5.} 用逆变换法生成密度为 $f(x)=3x^2,\ 0<x<1$ 的随机数，写出公式与步骤。
+
+\textbf{6.} 设计舍选算法生成 $\mathrm{Beta}(2,2)$（密度 $p(x)=6x(1-x),\ 0<x<1$）的随机数：求最小常数 $M$、写出算法、求平均接受概率。
+
+\textbf{7.} 写出生成二维正态 $N_2(\bm 0,\Sigma)$，$\Sigma=\begin{pmatrix}4&3.2\\3.2&4\end{pmatrix}$（即 $\sigma_1=\sigma_2=2,\rho=0.8$）随机向量的变换法步骤。
+
+\textbf{8.} 给出用蒙特卡洛方法估计"$\sigma$ 未知时正态均值 $t$ 置信区间覆盖率"的完整算法。
+
+\subsection*{三、推导与计算题（每题 12 分）}
+
+\textbf{9.} 设 $I=\int_0^1 e^{x}\d x$。(1) 写出平均值法估计量 $\hat I_2$ 并求其方差；(2) 写出对偶变量估计量并说明为何方差更小。
+
+\textbf{10.} 推导控制变量法最优系数 $c^*$ 及最小方差。
+
+\textbf{11.} 数据 $1,\,3,\,5$，统计量为样本均值。(1) 写出 Jackknife 的三个删一均值并计算 $\widehat{se}_J$；(2) 叙述 Bootstrap 估计标准误的步骤。
+
+\textbf{12.} 两分量高斯混合模型 $p(x)=\pi\phi(x;\mu_1,1)+(1-\pi)\phi(x;\mu_2,1)$（方差已知为 1）。写出 EM 的 E 步与 M 步公式。
+
+\newpage
+\subsection*{参考解答}
+
+\paragraph{1.}
+原理：若 $F$ 连续严格单调，$U\sim U(0,1)$，则 $F^{-1}(U)\sim F$。
+因为 $\Pr(F^{-1}(U)\le x)=\Pr(U\le F(x))=F(x)$。
+步骤：(i) 产生 $u\sim U(0,1)$；(ii) 输出 $x=F^{-1}(u)$。
+前提：$F$ 的反函数存在且能显式（或方便数值）求出。
+
+\paragraph{2.}
+第一类错误（弃真）：$H_0$ 真却拒绝，概率 $\alpha$；第二类错误（取伪）：$H_0$ 假却接受，概率 $\beta$；
+功效 $=1-\beta=\Pr(\text{拒绝 }H_0\mid H_1)$。
+MC 估计功效：在 $H_1$ 的某个具体参数下生成容量 $n$ 的样本→计算检验统计量→记录是否拒绝；
+独立重复 $K$ 次，功效估计为拒绝频率（拒绝次数$/K$）。
+
+\paragraph{3.}
+Bootstrap：总体分布未知时，用经验分布 $F_n$ 代替总体 $F$，
+\textbf{从原样本中有放回抽取}容量 $n$ 的自助样本，重复 $m$ 次，
+用自助统计量 $\hat\theta^*_1,\dots,\hat\theta^*_m$ 的经验分布近似 $\hat\theta$ 的抽样分布。
+区别：第 3 章每次从\textbf{已知总体}生成新数据；Bootstrap 只用\textbf{一份样本}反复重抽。
+
+\paragraph{4.}
+适用：数据含隐变量/缺失数据，观测似然难以直接最大化。
+E 步：在当前参数下求完整数据对数似然关于隐变量后验分布的条件期望
+$Q(\theta,\theta^{(i-1)})=\E[\log L(Z;\theta)\mid X;\theta^{(i-1)}]$；
+M 步：$\theta^{(i)}=\arg\max_\theta Q(\theta,\theta^{(i-1)})$。
+性质：观测似然单调不减，必收敛，但只保证局部极大、对初值敏感。
+
+\paragraph{5.}
+$F(x)=\int_0^x 3t^2\d t=x^3$。令 $u=x^3$ 得 $x=u^{1/3}$。
+步骤：产生 $u\sim U(0,1)$，输出 $x=u^{1/3}$。
+
+\paragraph{6.}
+取建议密度 $f(x)=1$（$U(0,1)$）。$p(x)=6x(1-x)$ 在 $x=1/2$ 取最大 $p(1/2)=3/2$，
+故最小 $M=3/2$，$h(y)=\dfrac{p(y)}{M}=4y(1-y)$。
+算法：(i) 产生 $y\sim U(0,1)$、$u\sim U(0,1)$；(ii) 若 $u\le 4y(1-y)$ 输出 $x=y$，否则返回 (i)。
+平均接受概率 $=1/M=2/3$。
+
+\paragraph{7.}
+(i) 用 Box--Muller 等方法生成独立 $\xi_1,\xi_2\sim N(0,1)$；
+(ii) 令
+\[
+\eta_1=2\xi_1,\qquad \eta_2=2\big(0.8\,\xi_1+\sqrt{1-0.64}\,\xi_2\big)=1.6\,\xi_1+1.2\,\xi_2 .
+\]
+验证：$\Var\eta_1=\Var\eta_2=4$，$\Cov(\eta_1,\eta_2)=2\times1.6=3.2$，正确。
+
+\paragraph{8.}
+给定真参数 $\mu_0,\sigma_0$，置信水平 $1-\alpha$：
+(i) 生成 $X_1,\dots,X_n\sim N(\mu_0,\sigma_0^2)$，算 $\bar X,S$，得区间
+$\bar X\pm t_{1-\alpha/2}(n-1)S/\sqrt n$；
+(ii) 记录是否覆盖 $\mu_0$（即 $\mu_0$ 是否落入区间）；
+(iii) 独立重复 $K$ 次，覆盖率估计 $=$ 覆盖次数$/K$，与 $1-\alpha$ 比较。
+
+\paragraph{9.}
+(1) $\hat I_2=\frac1n\sum e^{U_i}$，$U_i\sim U(0,1)$。
+$\E e^U=e-1=I$；$\E e^{2U}=\frac{e^2-1}{2}$，故
+\[
+\Var(\hat I_2)=\frac1n\Big(\frac{e^2-1}{2}-(e-1)^2\Big)\approx\frac{0.2420}{n}.
+\]
+(2) 对偶估计量 $\hat I_a=\frac{1}{2n}\sum\big[e^{U_i}+e^{1-U_i}\big]$。
+因 $e^x$ 单调增，$e^{U}$ 与 $e^{1-U}$ 负相关：
+$\Cov(e^U,e^{1-U})=\E e^{U+1-U}-(\E e^U)^2=e-(e-1)^2\approx-0.2342<0$，
+故 $\Var(\hat I_a)=\frac{1}{2n}\big[\Var(e^U)+\Cov(e^U,e^{1-U})\big]\approx\frac{0.0039}{n}$，
+方差缩减约 $60$ 倍。
+
+\paragraph{10.}
+$g(c)=\Var(X-cY)=\Var X-2c\Cov(X,Y)+c^2\Var Y$ 是 $c$ 的开口向上抛物线，
+$g'(c)=-2\Cov(X,Y)+2c\Var Y=0\Rightarrow c^*=\dfrac{\Cov(X,Y)}{\Var Y}$。代回：
+\[
+g(c^*)=\Var X-\frac{\Cov^2(X,Y)}{\Var Y}=\Var X\,(1-\rho_{XY}^2)\le\Var X .
+\]
+
+\paragraph{11.}
+(1) 全样本均值 $\hat\theta=3$。删一均值：
+$\hat\theta_{(1)}=\frac{3+5}{2}=4$，$\hat\theta_{(2)}=\frac{1+5}{2}=3$，$\hat\theta_{(3)}=\frac{1+3}{2}=2$；
+$\bar\theta_{(\cdot)}=3$。
+\[
+\widehat{se}_J=\sqrt{\frac{n-1}{n}\sum_i(\hat\theta_{(i)}-3)^2}
+=\sqrt{\frac{2}{3}\times(1+0+1)}=\sqrt{4/3}\approx1.155 .
+\]
+（与理论 $S/\sqrt n=2/\sqrt3$ 一致。）
+(2) Bootstrap：从 $\{1,3,5\}$ 中有放回抽 3 个得自助样本，算均值 $\hat\theta_i^*$；
+重复 $m$ 次；$\widehat{se}_B=\sqrt{\frac{1}{m-1}\sum(\hat\theta^*_i-\bar{\hat\theta}^*)^2}$。
+
+\paragraph{12.}
+E 步（责任）：
+\[
+\gamma_{i}=\frac{\pi^{(t)}\phi(x_i;\mu_1^{(t)},1)}
+{\pi^{(t)}\phi(x_i;\mu_1^{(t)},1)+(1-\pi^{(t)})\phi(x_i;\mu_2^{(t)},1)} .
+\]
+M 步：
+\[
+\pi^{(t+1)}=\frac1n\sum_i\gamma_i,\qquad
+\mu_1^{(t+1)}=\frac{\sum_i\gamma_i x_i}{\sum_i\gamma_i},\qquad
+\mu_2^{(t+1)}=\frac{\sum_i(1-\gamma_i)x_i}{\sum_i(1-\gamma_i)} .
+\]
+
+\vspace{6mm}
+\begin{center}
+\fbox{\parbox{0.9\textwidth}{\centering\textbf{临考三句话}\\[1mm]
+一、抽样三板斧：逆变换（解 $F^{-1}$）、舍选（找 $M=\sup p/f$，接受率 $1/M$）、变换（Box--Muller、Gamma 链条）。\\[1mm]
+二、模拟两件事：估 $\alpha$ 在 $H_0$ 下生成数据，估功效在 $H_1$ 下生成数据；估计量性质 = 重复抽样取均值方差。\\[1mm]
+三、进阶三招：方差缩减靠"负相关 / 已知信息 / 重要区域"，Bootstrap 靠"样本代总体有放回"，EM 靠"E 求期望、M 求最大、似然单调不减"。}}
+\end{center}

@@ -1,0 +1,134 @@
+\section{第4章\quad 假设检验的统计计算}
+
+\subsection{总览}
+
+本章两大主题：
+\begin{enumerate}[leftmargin=2em]
+  \item 用 MC 模拟\textbf{估计检验的第一类错误概率 $\alpha$ 与功效 $1-\beta$}（很多检验的功效没有显式公式）；
+  \item 一批\textbf{非参数检验}：拟合优度 $\chi^2$ 检验、K--S 检验、随机性检验（变号/游程）、两样本检验（Mann--Whitney U、两样本 K--S、游程）、独立性检验（列联表 $\chi^2$、相关系数检验）。
+\end{enumerate}
+
+\subsection{MC 估计第一类错误概率与功效}
+
+回顾：$\alpha=\Pr(\text{拒绝 }H_0\mid H_0\text{ 真})$（弃真），
+$1-\beta=\Pr(\text{拒绝 }H_0\mid H_1\text{ 真})$（功效）。
+
+\textbf{引例}：$X_i\overset{iid}{\sim}N(\mu,1)$，检验 $H_0:\mu=0$ vs $H_1:\mu\ne0$，
+统计量 $T=\sqrt n\,\bar X$，$H_0$ 下 $T\sim N(0,1)$，拒绝域 $|T|>u_{1-\alpha/2}$。
+
+\begin{ebox}{MC 估计第一类错误率}
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{在 $H_0$ 成立的参数下}（如 $\mu=0$）生成一组容量 $n$ 的样本，计算统计量，记录是否落入拒绝域；
+  \item 重复 $K$ 次；
+  \item 估计 $\hat\alpha=\dfrac{\text{拒绝次数}}{K}$，应接近名义水平 $\alpha$。
+\end{enumerate}
+\end{ebox}
+
+\begin{ebox}{MC 估计功效}
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{在 $H_1$ 成立的某个具体参数下}（如 $\mu=0.5$）生成样本、算统计量、记录是否拒绝；
+  \item 重复 $K$ 次，$\widehat{1-\beta}=\dfrac{\text{拒绝次数}}{K}$。
+\end{enumerate}
+功效是备择参数的函数（功效函数）：$\mu$ 离 0 越远、$n$ 越大，功效越接近 1。
+$K$ 越大估计越稳定（如 $K=1000$、$\alpha=0.05$ 时 $\hat\alpha$ 的标准差约
+$\sqrt{0.05\times0.95/1000}\approx0.007$）。
+\end{ebox}
+
+\subsection{单样本拟合优度检验}
+
+\subsubsection{$\chi^2$ 拟合优度检验（总体分布的卡方检验）}
+
+$H_0$：总体服从某给定分布 $F_0$。
+把取值范围分成 $r$ 个区间，$n_i$ 为落入第 $i$ 区间的观测频数，
+$p_i$ 为 $F_0$ 下落入第 $i$ 区间的理论概率，统计量
+\[
+\chi^2=\sum_{i=1}^{r}\frac{(n_i-np_i)^2}{np_i}\ \overset{H_0,\,n\to\infty}{\sim}\ \chi^2(r-1-s),
+\]
+其中 $s$ 为用样本估计的未知参数个数。$\chi^2$ 过大则拒绝 $H_0$。
+\textbf{注意}：要求每格期望频数 $np_i\ge5$（否则合并区间）。
+
+\subsubsection{单样本 K--S 检验}
+
+直接比较经验分布函数 $F_n(x)=\frac1n\#\{i:X_i\le x\}$ 与假设分布 $F_0(x)$：
+\[
+D_n=\sup_x|F_n(x)-F_0(x)| .
+\]
+$D_n$ 过大拒绝 $H_0$。与 $\chi^2$ 相比：K--S 不用分组、适合连续分布、对小样本更有效；
+$\chi^2$ 适合离散/分组数据。
+
+\subsubsection{随机性检验：变号检验与游程检验}
+
+检验序列是否"随机"（无趋势、无相关）：
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{变号（符号）检验}：看相邻观测的差的符号变化次数是否符合随机序列的期望；
+  \item \textbf{游程检验}：把序列按高于/低于中位数化为 0--1 序列，
+  \textbf{游程}=连续相同符号的最大段。设 1 有 $m$ 个、0 有 $n$ 个，游程总数 $R$ 在随机假设下
+  \[
+  \E R=\frac{2mn}{m+n}+1,\qquad
+  \Var R=\frac{2mn(2mn-m-n)}{(m+n)^2(m+n-1)} ,
+  \]
+  大样本时 $\dfrac{R-\E R}{\sqrt{\Var R}}\overset{\cdot}{\sim}N(0,1)$。游程过多或过少都拒绝随机性。
+\end{itemize}
+
+\subsection{两样本非参数检验}
+
+设两组独立样本 $X_1,\dots,X_m$ 与 $Y_1,\dots,Y_n$，检验两总体分布是否相同。
+
+\subsubsection{Mann--Whitney U 检验（曼—惠特尼）}
+
+把两组混合排序求秩。记 $W$ 为 $X$ 组的秩和（Wilcoxon 秩和），
+\[
+U=W-\frac{m(m+1)}{2}\quad(\text{即 }X\text{ 超过 }Y\text{ 的对数}).
+\]
+$H_0$（同分布）下
+\[
+\E U=\frac{mn}{2},\qquad \Var U=\frac{mn(m+n+1)}{12},
+\]
+大样本用正态近似 $Z=\dfrac{U-\E U}{\sqrt{\Var U}}\overset{\cdot}{\sim}N(0,1)$。
+适用于检验\textbf{位置（中位数）差异}，不要求正态。
+
+\subsubsection{两样本 K--S 检验}
+
+\[
+D_{m,n}=\sup_x\big|F_m(x)-G_n(x)\big| ,
+\]
+两经验分布函数的最大偏差，过大则拒绝"两总体同分布"。对位置、刻度、形状差异都敏感。
+
+\subsubsection{两样本游程检验}
+
+把混合样本从小到大排序，按来自 $X$ 还是 $Y$ 标记成 0--1 序列数游程 $R$。
+若两总体相同，两种标记充分混杂，$R$ 应较大；$R$ 显著偏小则拒绝。
+均值方差公式同上节（$m,n$ 为两组样本量）。
+
+\subsection{独立性检验}
+
+\subsubsection{列联表 $\chi^2$ 检验}
+
+$r\times c$ 列联表，检验行变量与列变量独立。
+$n_{ij}$ 为观测频数，行和 $n_{i\cdot}$、列和 $n_{\cdot j}$，独立时期望频数
+$\hat e_{ij}=\dfrac{n_{i\cdot}n_{\cdot j}}{n}$，统计量
+\[
+\chi^2=\sum_{i=1}^{r}\sum_{j=1}^{c}\frac{(n_{ij}-\hat e_{ij})^2}{\hat e_{ij}}
+\ \overset{H_0}{\sim}\ \chi^2\big((r-1)(c-1)\big).
+\]
+
+\subsubsection{相关系数检验}
+
+二维正态样本检验 $H_0:\rho=0$。样本相关系数 $r$，统计量
+\[
+T=\frac{r\sqrt{n-2}}{\sqrt{1-r^2}}\ \overset{H_0}{\sim}\ t(n-2),
+\]
+$|T|$ 过大拒绝（即认为线性相关显著）。
+（非正态时可用 Spearman 秩相关检验。）
+
+\subsection{本章考点与题型}
+
+\begin{ebox}{高频题型}
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{概念题}：两类错误、功效的定义；为什么需要 MC 估计功效。
+  \item \textbf{叙述 MC 估计 $\alpha$/功效的算法步骤}（注意：估 $\alpha$ 在 $H_0$ 下生成数据，估功效在 $H_1$ 下生成数据——最易混！）。
+  \item \textbf{$\chi^2$ 拟合优度计算题}：给频数表算 $\chi^2$ 与自由度（记得减去估计参数个数 $s$）。
+  \item \textbf{选择合适的非参数检验}：单样本分布拟合用 $\chi^2$/K--S；两样本位置差异用 U 检验；两样本是否同分布用两样本 K--S/游程；随机性用游程检验；列联表独立性用 $\chi^2((r-1)(c-1))$。
+  \item \textbf{U 检验/游程检验的正态近似计算}：代均值方差公式算 $Z$ 并查表下结论。
+\end{enumerate}
+\end{ebox}

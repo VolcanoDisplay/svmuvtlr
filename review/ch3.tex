@@ -1,0 +1,99 @@
+\section{第3章\quad 参数估计的统计计算}
+
+\subsection{总览}
+
+本章用蒙特卡洛（Monte Carlo, MC）方法研究\textbf{估计量本身的统计性质}：
+估计量 $\hat\theta(X_1,\dots,X_n)$ 也是随机变量，它的期望、方差、MSE 在理论上往往算不出来，
+但可以"重复抽样—重复计算估计值—对估计值求样本均值/方差"来数值逼近。
+
+\subsection{用 MC 估计估计量的期望与方差}
+
+\begin{ebox}{核心算法（必背流程）}
+\begin{enumerate}[leftmargin=2em]
+  \item 从总体 $X$ 中随机生成一组容量为 $n$ 的数据 $X_{11},\dots,X_{1n}$，
+  计算估计值 $\hat\theta^{(1)}=\hat\theta(X_{11},\dots,X_{1n})$；
+  \item 独立重复上述步骤 $K$ 次，得 $\hat\theta^{(1)},\dots,\hat\theta^{(K)}$；
+  \item 用这 $K$ 个值的样本均值与样本方差估计 $\hat\theta$ 的期望与方差：
+  \[
+  \widehat{\E(\hat\theta)}=\frac1K\sum_{k=1}^{K}\hat\theta^{(k)},\qquad
+  \widehat{\Var(\hat\theta)}=\frac1{K}\sum_{k=1}^{K}\Big(\hat\theta^{(k)}-\overline{\hat\theta}\Big)^2 .
+  \]
+\end{enumerate}
+\end{ebox}
+
+\textbf{例 1（验证 $\bar X$ 的性质）}：$X_i\sim N(\mu,\sigma^2)$，理论上
+$\E\bar X=\mu,\ \Var\bar X=\sigma^2/n$。MC 验证：重复 $K$ 组、每组 $n$ 个正态数，
+求每组均值，再对 $K$ 个均值求均值/方差，与理论值比较。
+\textbf{精度}：$\widehat{\E(\bar X)}$ 的误差方差约为 $\sigma^2/(nK)$，$K$ 越大越准。
+
+\textbf{例 2（截断分布的均值估计）}：对截断于 $[0,1]$ 的分布 $X_{[0,1]}$，
+其均值 $\theta$ 的估计 $\hat\theta=\frac1n\sum X_i$，理论分布复杂，可用 MC 评估
+$\hat\theta$ 的偏差与方差。
+
+\textbf{用 MC 比较估计量优劣}：对同一参数的多个估计量
+（如均值 vs 中位数估计正态 $\mu$），分别 MC 估计各自的 $\mathrm{MSE}=\mathrm{Bias}^2+\Var$，
+小者更优。
+
+\subsection{置信区间回顾与覆盖率的 MC 估计}
+
+\subsubsection{单总体正态均值的置信区间}
+
+设 $X_1,\dots,X_n\overset{iid}{\sim}N(\mu,\sigma^2)$，置信水平 $1-\alpha$：
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{$\sigma^2$ 已知}：枢轴量 $\dfrac{\bar X-\mu}{\sigma/\sqrt n}\sim N(0,1)$，区间
+  \[
+  \Big[\bar X-u_{1-\alpha/2}\frac{\sigma}{\sqrt n},\ \bar X+u_{1-\alpha/2}\frac{\sigma}{\sqrt n}\Big].
+  \]
+  \item \textbf{$\sigma^2$ 未知}：用样本方差 $S^2$ 替代，枢轴量
+  $T=\dfrac{\bar X-\mu}{S/\sqrt n}\sim t(n-1)$，区间
+  \[
+  \Big[\bar X-t_{1-\alpha/2}(n-1)\frac{S}{\sqrt n},\ \bar X+t_{1-\alpha/2}(n-1)\frac{S}{\sqrt n}\Big].
+  \]
+  \item \textbf{方差 $\sigma^2$ 的区间}：$\dfrac{(n-1)S^2}{\sigma^2}\sim\chi^2(n-1)$，区间
+  $\Big[\dfrac{(n-1)S^2}{\chi^2_{1-\alpha/2}},\ \dfrac{(n-1)S^2}{\chi^2_{\alpha/2}}\Big]$。
+\end{itemize}
+
+\subsubsection{总体比例的（渐近）置信区间}
+
+$X_i\overset{iid}{\sim}B(1,p)$，由中心极限定理 $\bar X\overset{\cdot}{\sim}N\big(p,\frac{p(1-p)}{n}\big)$，得
+\[
+\Big[\hat p-u_{1-\alpha/2}\sqrt{\tfrac{\hat p(1-\hat p)}{n}},\ \hat p+u_{1-\alpha/2}\sqrt{\tfrac{\hat p(1-\hat p)}{n}}\Big],\qquad \hat p=\bar X .
+\]
+
+\subsubsection{两总体的置信区间}
+
+两独立正态总体 $N(\mu_1,\sigma_1^2),N(\mu_2,\sigma_2^2)$：
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{均值差 $\mu_1-\mu_2$（方差已知）}：
+  $\bar X-\bar Y\pm u_{1-\alpha/2}\sqrt{\frac{\sigma_1^2}{n_1}+\frac{\sigma_2^2}{n_2}}$。
+  \item \textbf{均值差（方差未知但相等）}：合并方差
+  $S_w^2=\frac{(n_1-1)S_1^2+(n_2-1)S_2^2}{n_1+n_2-2}$，
+  $\bar X-\bar Y\pm t_{1-\alpha/2}(n_1{+}n_2{-}2)\,S_w\sqrt{\frac1{n_1}+\frac1{n_2}}$。
+  \item \textbf{方差比 $\sigma_1^2/\sigma_2^2$}：枢轴量
+  $\frac{S_1^2/\sigma_1^2}{S_2^2/\sigma_2^2}\sim F(n_1-1,n_2-1)$。
+\end{itemize}
+
+\subsubsection{置信区间覆盖率的 MC 估计}
+
+\begin{ebox}{算法：检验"区间到底有没有 95\% 的把握"}
+\begin{enumerate}[leftmargin=2em]
+  \item 给定真参数 $\theta$，从总体生成一组样本，按公式算出区间 $[\hat\theta_L^{(1)},\hat\theta_U^{(1)}]$；
+  \item 重复 $K$ 次；
+  \item 统计覆盖频率
+  $\widehat{\text{覆盖率}}=\frac1K\sum_{k=1}^K I\big(\hat\theta_L^{(k)}\le\theta\le\hat\theta_U^{(k)}\big)$，
+  与名义水平 $1-\alpha$ 比较。
+\end{enumerate}
+若总体并非正态（稳健性研究）或样本量小，覆盖率可能明显偏离 $1-\alpha$——这正是 MC 模拟的价值。
+\end{ebox}
+
+\subsection{本章考点与题型}
+
+\begin{ebox}{高频题型}
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{叙述 MC 估计估计量期望/方差的算法步骤}（三步流程，必背）。
+  \item \textbf{设计 MC 实验比较两个估计量}（用 MSE 作标准，写清生成—计算—汇总）。
+  \item \textbf{写出各种置信区间公式}并说明枢轴量及其分布（正态均值已知/未知方差、方差、比例、两总体）。
+  \item \textbf{设计 MC 实验估计置信区间的覆盖率}，并解释结果含义。
+  \item 概念题：无偏性、有效性、相合性、MSE 分解 $\mathrm{MSE}=\mathrm{Bias}^2+\Var$。
+\end{enumerate}
+\end{ebox}

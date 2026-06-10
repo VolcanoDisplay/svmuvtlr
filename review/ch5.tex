@@ -1,0 +1,134 @@
+\section{第5章\quad 减小方差的计算方法（方差缩减技术）}
+
+\subsection{总览与动机}
+
+蒙特卡洛估计的精度由 $\Var/\!\sqrt n$ 决定。增大 $n$ 代价高（精度只按 $1/\sqrt n$ 提升），
+更聪明的办法是\textbf{构造方差更小的无偏估计量}。本章七件武器：
+\textbf{随机投点法 vs 平均值法、对偶（对照）变量法、控制变量法、条件期望法、重要抽样法、分层抽样法、随机数重复使用}。
+贯穿本章的模型问题：计算积分
+\[
+I=\int_0^1 f(x)\d x\qquad(0\le f(x)\le 1).
+\]
+
+\subsection{随机投点法与平均值法}
+
+\textbf{随机投点法（hit-or-miss）}：在单位正方形内撒独立均匀点 $(\xi_i,\eta_i)$，统计落在曲线下方的比例：
+\[
+\hat I_1=\frac1n\sum_{i=1}^{n}I(\eta_i\le f(\xi_i)).
+\]
+每个指示变量是 $B(1,I)$，故 $\E\hat I_1=I$，
+\[
+\Var(\hat I_1)=\frac{I(1-I)}{n}.
+\]
+
+\textbf{平均值法（样本均值法）}：注意 $I=\E f(U)$，$U\sim U(0,1)$，于是
+\[
+\hat I_2=\frac1n\sum_{i=1}^{n}f(U_i),\qquad
+\Var(\hat I_2)=\frac1n\Big(\int_0^1 f^2\d x-I^2\Big).
+\]
+
+\begin{kbox}{结论（必考）：平均值法优于随机投点法}
+因为 $0\le f\le1$ 时 $f^2\le f$，故
+\[
+\Var(\hat I_2)=\frac1n\Big(\int f^2-I^2\Big)\le\frac1n\Big(\int f-I^2\Big)=\frac{I-I^2}{n}=\Var(\hat I_1).
+\]
+两者都是无偏估计，但平均值法方差更小。直觉：投点法把信息压缩成 0/1，丢失了 $f$ 的取值信息。
+\end{kbox}
+
+\subsection{对偶变量法（对照变量法）}
+
+\begin{kbox}{原理}
+若 $X,Y$ 同分布（都无偏地"代表"目标），且\textbf{负相关}，则
+\[
+\Var\Big(\frac{X+Y}{2}\Big)=\frac{1}{4}\big(\Var X+\Var Y+2\Cov(X,Y)\big)
+<\frac{\Var X}{2}\ (\text{独立两样本平均的方差}),
+\]
+当 $\Cov(X,Y)<0$ 时方差被进一步压低。
+\end{kbox}
+
+\textbf{标准做法}：$U\sim U(0,1)$ 时 $1-U$ 也 $\sim U(0,1)$，且与 $U$ 完全负相关。估计 $I=\E f(U)$ 用
+\[
+\hat I_{a}=\frac{1}{2n}\sum_{i=1}^{n}\big[f(U_i)+f(1-U_i)\big].
+\]
+\textbf{关键条件}：若 $f$ 是\textbf{单调函数}，则 $f(U)$ 与 $f(1-U)$ 负相关，方差必降；
+且同样用 $2n$ 次函数求值，只需 $n$ 个随机数。
+
+\subsection{控制变量法}
+
+要估 $\mu=\E X$。找一个与 $X$ 相关、且\textbf{期望已知}的变量 $Y$（$\E Y=\mu_Y$ 已知），构造
+\[
+\hat\mu_c=\frac1n\sum_{i=1}^n\big[X_i-c\,(Y_i-\mu_Y)\big].
+\]
+显然无偏；方差
+\[
+\Var(X-cY)=\Var X-2c\Cov(X,Y)+c^2\Var Y
+\]
+关于 $c$ 求导取最小，得\textbf{最优系数}
+\[
+c^{*}=\frac{\Cov(X,Y)}{\Var Y},\qquad
+\Var_{\min}=\Var X\,(1-\rho_{XY}^2).
+\]
+$|\rho|$ 越接近 1 缩减越多。实际中 $\Cov,\Var$ 可由同一批模拟样本估计。
+
+\subsection{条件期望法（Rao--Blackwell 化）}
+
+\begin{kbox}{原理：全期望公式 + 方差分解}
+\[
+\E X=\E\big[\E(X\mid Y)\big],\qquad
+\Var X=\E\big[\Var(X\mid Y)\big]+\Var\big[\E(X\mid Y)\big]\ \ge\ \Var\big[\E(X\mid Y)\big].
+\]
+故用 $Z=\E(X\mid Y)$ 代替 $X$：期望不变（仍无偏），方差不增（一般严格减小）。
+\end{kbox}
+
+操作：若条件期望 $\E(X\mid Y=y)=g(y)$ 可以\textbf{解析算出}，
+则只需模拟 $Y_1,\dots,Y_n$，用 $\frac1n\sum g(Y_i)$ 估计 $\E X$——
+把"能用公式算的部分"用公式算掉，只把算不了的部分交给模拟。
+
+\subsection{重要抽样法（importance sampling）}
+
+\begin{kbox}{原理：换测度}
+\[
+I=\int f(x)\d x=\int\frac{f(x)}{g(x)}\,g(x)\d x=\E_g\Big[\frac{f(X)}{g(X)}\Big],
+\]
+其中 $g$ 是自选的密度（重要抽样密度），要求 $f(x)\neq0$ 处 $g(x)>0$。估计量
+\[
+\hat I=\frac1n\sum_{i=1}^n\frac{f(X_i)}{g(X_i)},\qquad X_i\overset{iid}{\sim}g .
+\]
+\end{kbox}
+
+方差 $\Var_g\big[f(X)/g(X)\big]$ 在 $g(x)\propto|f(x)|$ 时最小（理想情形方差为 0，但不可实现）。
+\textbf{实用原则}：让 $g$ 的形状尽量接近 $|f|$，在 $|f|$ 大（"重要"）的区域多放抽样概率。
+\textbf{风险}：若 $g$ 尾部比 $f$ 轻，比值 $f/g$ 可能爆炸，方差反而无穷大。
+
+\subsection{分层抽样法}
+
+把积分区间分成 $k$ 层 $A_1,\dots,A_t$（如 $[0,1]$ 等分），在第 $j$ 层内独立抽 $n_j$ 个点估层内均值，再加权合并：
+\[
+\hat I_{st}=\sum_{j} p_j\,\bar f_j,\qquad p_j=\Pr(X\in A_j).
+\]
+方差只含\textbf{层内方差}，消去了\textbf{层间方差}（与条件期望法同源：
+$\Var X=\E\Var(X\mid \text{层})+\Var\E(X\mid \text{层})$，分层把第二项变成 0），
+故不会比简单随机抽样差。层内越均匀（$f$ 在层内变化小）效果越好；
+按 $n_j\propto p_j\sigma_j$ 分配样本量最优（Neyman 分配）。
+
+\subsection{随机数重复使用（公共随机数法）}
+
+比较两个系统 $\theta_1=\E X,\ \theta_2=\E Y$ 的差 $\theta_1-\theta_2$ 时，
+用\textbf{同一组随机数}驱动两套模拟，使 $X_i,Y_i$ 正相关：
+\[
+\Var(X-Y)=\Var X+\Var Y-2\Cov(X,Y),
+\]
+$\Cov>0$ 使差的方差减小。口诀：\textbf{估"差"用同一随机数（正相关），估"和/均值"用对偶变量（负相关）}。
+
+\subsection{本章考点与题型}
+
+\begin{ebox}{高频题型}
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{证明平均值法方差 $\le$ 投点法方差}（利用 $f^2\le f$，必背）。
+  \item \textbf{对偶变量法}：写出估计量，说明无偏性，证明单调 $f$ 下方差减小；给定具体 $f$（如 $e^x$）算方差缩减量。
+  \item \textbf{控制变量法}：推导最优 $c^*=\Cov/\Var$ 与最小方差 $\Var X(1-\rho^2)$。
+  \item \textbf{条件期望法}：用方差分解公式说明为何方差不增。
+  \item \textbf{重要抽样}：写出加权估计量，说明 $g$ 的选取原则与失败风险。
+  \item \textbf{方法辨析/搭配}：给一个场景判断该用哪种方差缩减技术。
+\end{enumerate}
+\end{ebox}
