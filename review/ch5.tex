@@ -1,270 +1,419 @@
 \section{第5章\quad 方差缩减技术}
 
-\subsection{故事：MC 的"省钱秘籍"}
+\subsection{开场：一个贯穿全章的小目标}
 
-蒙特卡洛估计的误差 $\propto\sigma/\sqrt n$。想把误差减小到 $1/10$？
-样本量要乘 100——这是"花钱"的笨办法。
-聪明的办法是\textbf{在 $n$ 不变的前提下把 $\sigma$ 压下去}：
-同样的计算量换更高的精度，这就是方差缩减（variance reduction）。
-
-本章的统一目标：估计积分/期望
+这一章我们只干一件事：估计一个积分。就拿这个当全章的"主角"：
 \[
-I=\int_0^1 f(x)\,\d x=\E\,f(U),\qquad U\sim U(0,1).
+I=\int_0^1 e^x\,\d x = e-1\approx 1.7183 .
 \]
-每种技术都是一种"省钱"思路，学的时候抓住两点：\textbf{为什么方差变小了}、\textbf{怎么操作}。
+当然，这个积分用牛顿—莱布尼茨公式一秒就能算出来。但请你假装不会算——
+因为现实中要算的积分往往没有解析解（高维积分、复杂期望），
+而我们在这个"答案已知"的玩具上练出来的每一招，都能原样搬到真问题上去。
+答案已知还有个好处：每种方法做完，我们都能\textbf{回头对答案、算方差}，
+亲眼看到"省了多少"。
 
-\subsection{出发点：投点法 vs 平均值法}
-
-\paragraph{投点法（hit-or-miss）。}
-设 $0\le f\le1$。往单位正方形里均匀投 $n$ 个点 $(U_i,V_i)$，
-数落在曲线下方（$V_i\le f(U_i)$）的比例：
+\paragraph{第一步：把积分变成期望。}
+蒙特卡洛的起手式永远是这一句话——积分可以写成期望：
 \[
-\hat I_1=\frac1n\sum_i I\big(V_i\le f(U_i)\big),\qquad
+I=\int_0^1 e^x\,\d x=\E\,[e^U],\qquad U\sim U(0,1).
+\]
+
+\begin{pbox}
+为什么能这么写？期望的定义是 $\E\,g(U)=\int g(u)f_U(u)\d u$，
+而 $U(0,1)$ 的密度 $f_U(u)=1$（$0\le u\le1$），所以
+$\E\,e^U=\int_0^1 e^u\cdot1\,\d u$，恰好就是我们要的积分。
+一句话：\textbf{在 $[0,1]$ 上的积分 $=$ 均匀随机数代入被积函数后的平均值}。
+\end{pbox}
+
+既然 $I$ 是个期望，由大数定律，抽一堆 $U_i$、把函数值取平均就能估它：
+\[
+\hat I=\frac1n\sum_{i=1}^n e^{U_i}\ \longrightarrow\ I .
+\]
+这就是\textbf{平均值法}，最朴素的蒙特卡洛。它的误差有多大？
+由中心极限定理，$\hat I$ 的标准差是
+\[
+\sqrt{\Var(\hat I)}=\frac{\sigma}{\sqrt n},\qquad \sigma^2=\Var(e^U)\approx0.2420 .
+\]
+
+\begin{pbox}
+$\sigma/\sqrt n$ 这个式子是全章的"敌人"，盯住它看：
+想让误差缩小到 $1/10$，因为分母是 $\sqrt n$，样本量 $n$ 得乘 $100$——
+精度每上一个台阶，计算量要爆涨两个台阶，这是"花钱"的笨办法。
+本章所有方法都在打另一个主意：\textbf{$n$ 不动，把分子 $\sigma$ 压小}。
+$\sigma$ 压到一半，效果等于 $n$ 翻 4 倍，白赚。
+\end{pbox}
+
+下面我们就带着这个目标，一种困境引出一种方法，每种方法都回到
+$\int_0^1e^x\d x$ 上算一遍账。
+
+\subsection{方法零的对决:投点法 vs 平均值法}
+
+其实在"平均值法"之前，还有个更原始的祖先——投点法。把它请出来比一比，
+能帮我们理解"方差是怎么浪费掉的"。
+
+\paragraph{投点法的想法。}
+$0\le f(x)\le 1$ 时（$e^x$ 超过 1，可以先除以 $e$ 缩到 $[0,1]$，道理不变），
+积分 $I$ 就是曲线下方的面积。往单位正方形里均匀撒 $n$ 个点 $(U_i,V_i)$，
+数落在曲线下方的比例：
+\[
+\hat I_1=\frac1n\sum_i I\big(V_i\le f(U_i)\big).
+\]
+每个点"中/不中"是一次成功率为 $I$ 的伯努利试验，所以
+\[
 \Var(\hat I_1)=\frac{I(1-I)}{n}.
 \]
 
-\paragraph{平均值法（sample mean）。}
-直接把 $I$ 看成期望，取
+\paragraph{平均值法。}就是上一节的 $\hat I_2=\frac1n\sum f(U_i)$，
 \[
-\hat I_2=\frac1n\sum_i f(U_i),\qquad
 \Var(\hat I_2)=\frac1n\Big(\int_0^1 f^2\,\d x-I^2\Big).
 \]
 
-\begin{kbox}{定理：平均值法永不吃亏}
+\begin{kbox}{定理：平均值法永不吃亏（必考证明）}
 若 $0\le f(x)\le1$，则 $\Var(\hat I_2)\le\Var(\hat I_1)$。
 
-\textbf{证明}：$0\le f\le1\Rightarrow f^2\le f$，故
+\textbf{证明（就三行）}：$0\le f\le1\Rightarrow f^2\le f$，两边积分得
 $\int f^2\,\d x\le\int f\,\d x=I$，于是
 \[
 \Var(\hat I_2)=\frac{\int f^2-I^2}{n}\le\frac{I-I^2}{n}=\frac{I(1-I)}{n}=\Var(\hat I_1).\qquad\blacksquare
 \]
-\textbf{直觉}：投点法把 $f(U_i)$ 这个连续信息压缩成"中/不中"一个比特，浪费了信息；
-平均值法用全了，自然更准。
 \end{kbox}
+
+\begin{pbox}
+为什么投点法吃亏？你算出了 $f(U_i)$ 这个\textbf{连续的}数值，
+却只用它回答了一个"是/否"问题（$V_i$ 在不在下面），
+把一个实数的信息压缩成了一个比特——剩下的信息全扔了。
+平均值法把 $f(U_i)$ 原原本本用上，自然更准。
+\textbf{这给出全章第一条心法：别浪费手里已有的信息。}
+\end{pbox}
 
 \begin{exbox}[两法方差对比]
 估计 $I=\int_0^1 x\,\d x=\frac12$。分别算投点法与平均值法的方差，求方差缩减比。
 \end{exbox}
 \begin{sol}
-投点法：$\Var(\hat I_1)=\frac{I(1-I)}{n}=\frac{1/4}{n}=\frac{0.25}{n}$。
+\textbf{第一步}（投点法）：$\Var(\hat I_1)=\frac{I(1-I)}{n}=\frac{(1/2)(1/2)}{n}=\frac{0.25}{n}$。
 
-平均值法：$\int_0^1x^2\d x=\frac13$，
+\textbf{第二步}（平均值法）：先算 $\int_0^1x^2\d x=\frac13$，再代公式
 $\Var(\hat I_2)=\frac1n\big(\frac13-\frac14\big)=\frac{1/12}{n}\approx\frac{0.083}{n}$。
 
-缩减比 $=0.25/0.083=3$：平均值法等于白赚了 3 倍样本量。
+\textbf{第三步}（对比）：缩减比 $=0.25/0.083=3$——同样的 $n$，平均值法等于白赚 3 倍样本量。
 \end{sol}
 
-\subsection{对偶变量法（antithetic variates）}
+从现在起，平均值法 $\hat I=\frac1n\sum e^{U_i}$、方差 $\frac{0.242}{n}$，
+就是我们的\textbf{基准线}。后面每种方法都要挑战它。
 
-\paragraph{直觉先行。}
-两个估计量平均的方差：
+\subsection{第一招：对偶变量法——找一个"反着错"的搭档}
+
+\paragraph{困境。}
+平均值法的每个 $e^{U_i}$ 都在独立地"乱抖"：这次抽到大的 $U$，估计就偏高；
+下次抽到小的，就偏低。误差全靠"抽得多、自然抵消"，太被动了。
+能不能\textbf{主动制造抵消}？
+
+\paragraph{灵感。}
+先看一个一般的事实。两个同分布估计量取平均：
 \[
 \Var\Big(\frac{X+Y}{2}\Big)=\frac{\Var X+\Var Y+2\Cov(X,Y)}{4}.
 \]
-若 $X,Y$ \textbf{负相关}，$\Cov<0$，平均后的方差比独立时还小——
-"一个偏高时另一个偏低，互相抵消"。
+若 $X,Y$ 独立，$\Cov=0$；但若能让它们\textbf{负相关}（$\Cov<0$），
+平均后的方差比独立时还要小——一个偏高时另一个恰好偏低，互相抵消。
 
-\begin{ebox}{操作}
-$U$ 与 $1-U$ 同为 $U(0,1)$ 但完全负相关。取
+那去哪找一对"同分布却负相关"的随机数？答案近在眼前：
+\textbf{$U$ 和 $1-U$}。$U\sim U(0,1)$ 时 $1-U$ 也 $\sim U(0,1)$（对称性），
+但两者完全负相关：$U$ 大则 $1-U$ 必小。
+
+\begin{ebox}{对偶变量法（antithetic variates）}
 \[
-\hat I=\frac1{2n}\sum_{i=1}^n\big[f(U_i)+f(1-U_i)\big].
+\hat I_{\text{a}}=\frac1{n}\sum_{i=1}^{n}\frac{f(U_i)+f(1-U_i)}{2}.
 \]
 当 $f$ \textbf{单调}时，$f(U)$ 与 $f(1-U)$ 负相关，必有方差缩减；
-且每对只花一个随机数，等于"买一送一"。
+且每对只花一个随机数，"买一送一"。
 \end{ebox}
 
 \begin{pbox}
-抬桌子类比：一个人端盘子会抖（误差大），两个人抬且"你往左晃时我恰好往右晃"
-（负相关），盘子就稳了。$U$ 和 $1-U$ 就是这样一对"反着抖"的搭档：
-$U$ 抽到偏大的，$1-U$ 必然偏小，$f$ 单调时两个函数值一高一低，平均后误差大幅抵消。
+抬桌子类比：一个人端盘子手会抖（误差大）；两个人抬，且"你往左晃时我恰好往右晃"
+（负相关），盘子就稳了。注意\textbf{为什么要求 $f$ 单调}：
+$U$ 偏大 $\Rightarrow 1-U$ 偏小 $\Rightarrow$（$f$ 单调增时）$f(U)$ 偏大、$f(1-U)$ 偏小，
+一高一低才能抵消。若 $f$ 不单调（比如先升后降），$U$ 和 $1-U$ 可能落在两个坡上
+同时偏高，抵消就失灵了。
 \end{pbox}
 
+\paragraph{回到主角算账。}$f(x)=e^x$ 严格单调增，正合适。
+
 \begin{exbox}[对偶法估计 $\int_0^1 e^x\d x$]
-比较朴素平均值法与对偶法（同为 $2n$ 次函数求值）的方差。
-已知 $\E e^U=e-1\approx1.718$，$\Var(e^U)=\frac{e^2-1}{2}-(e-1)^2\approx0.242$，
-$\Cov(e^U,e^{1-U})=e-(e-1)^2\approx-0.234$。
+比较朴素平均值法与对偶法（同为 $2n$ 次函数求值，公平比较）的方差。
+已知 $\Var(e^U)\approx0.242$，$\Cov(e^U,e^{1-U})=e-(e-1)^2\approx-0.234$。
 \end{exbox}
 \begin{sol}
-朴素法用 $2n$ 个独立 $U$：$\Var=\frac{0.242}{2n}=\frac{0.121}{n}$。
+\textbf{第一步}（基准线）：朴素法用 $2n$ 个独立 $U$，
+$\Var=\frac{0.242}{2n}=\frac{0.121}{n}$。
 
-对偶法：单对的方差
+\textbf{第二步}（算一对的方差）：套平均公式，
 \[
 \Var\Big(\frac{e^U+e^{1-U}}{2}\Big)=\frac{0.242+0.242+2\times(-0.234)}{4}
-=\frac{0.016}{4}=0.0039 ,
+=\frac{0.016}{4}=0.0039 .
 \]
-$n$ 对平均后 $\Var=\frac{0.0039}{n}$。
-缩减比 $0.121/0.0039\approx31$ 倍！$e^x$ 单调性强，负相关抵消效果极好。
+注意分子里 $2\Cov$ 几乎把 $\Var X+\Var Y$ 全吃掉了——这就是负相关的威力。
+
+\textbf{第三步}（$n$ 对取平均、对比）：$\Var(\hat I_{\text a})=\frac{0.0039}{n}$，
+缩减比 $0.121/0.0039\approx\textbf{31 倍}$。
+$e^x$ 单调性强，抵消效果极好。
 \end{sol}
 
-\subsection{控制变量法（control variates）}
+\begin{pbox}
+考试答这类题的固定三步：(1) 写出对偶估计量；
+(2) 用 $\Var\big(\frac{X+Y}2\big)$ 公式代入给定的 $\Var$ 和 $\Cov$；
+(3) 与"同样函数求值次数"的朴素法相除得缩减比。
+题目一般会把 $\Cov$ 直接给你，不用自己积分。
+\end{pbox}
 
-\paragraph{直觉先行。}
-想估 $\E X$，手头另有一个与 $X$ 相关、且\textbf{期望已知}的变量 $Y$（$\E Y=\mu_Y$）。
-$Y$ 的模拟误差 $Y-\mu_Y$ 是可观测的"风向标"——$X$ 与 $Y$ 正相关时，
-$Y$ 偏高大概率 $X$ 也偏高，把这部分误差扣掉：
+\subsection{第二招：控制变量法——请一个"参照物"来纠偏}
+
+\paragraph{困境。}
+对偶法靠的是 $f$ 单调这个运气。换个思路：$e^x$ 这个函数我们\textbf{并非一无所知}——
+比如它长得很像直线 $1+x$（泰勒展开）。能不能利用"我们会算的近似函数"来帮忙？
+
+\paragraph{灵感。}
+想估 $\E X$（这里 $X=e^U$）。手头另有个变量 $Y$（比如 $Y=U$），
+它与 $X$ 高度相关，而且\textbf{它的期望我们精确知道}（$\E U=\frac12$）。
+关键观察：模拟中 $Y$ 的误差 $Y-\mu_Y$ 是\textbf{看得见的}！
+这次抽样若 $\bar U$ 比 $\frac12$ 偏高，说明这批随机数整体偏大，
+那 $e^U$ 的平均多半也偏高——既然知道偏了，扣掉就是：
 \[
 X(c)=X-c\,(Y-\mu_Y).
 \]
-无论 $c$ 取多少都无偏（因 $\E(Y-\mu_Y)=0$），挑 $c$ 让方差最小。
+无论 $c$ 取多少都无偏（因为 $\E(Y-\mu_Y)=0$，扣掉的东西平均是零），
+所以可以放心挑一个让方差最小的 $c$。
 
-\begin{kbox}{最优系数（必背推导）}
+\begin{kbox}{最优系数（必背推导，高频大题）}
+把方差展开（就是二次函数）：
 \[
-\Var X(c)=\Var X-2c\Cov(X,Y)+c^2\Var Y
+\Var X(c)=\Var X-2c\Cov(X,Y)+c^2\Var Y ,
 \]
-是 $c$ 的开口向上抛物线，求导置零得
+这是 $c$ 的开口向上抛物线，对 $c$ 求导置零：$-2\Cov+2c\Var Y=0$，得
 \[
 c^*=\frac{\Cov(X,Y)}{\Var Y},\qquad
-\Var X(c^*)=\Var X\,(1-\rho_{XY}^2).
+\Var X(c^*)=\Var X\,\big(1-\rho_{XY}^2\big).
 \]
 相关越强（$|\rho|\to1$），缩减越狠。实际中 $\Cov,\Var$ 用样本估计。
 \end{kbox}
 
 \begin{pbox}
-考试生类比：想估某同学真实水平（$\E X$），但这次考题整体偏难。
-怎么知道偏了多少？看一个"参照生"$Y$：他的真实水平 $\mu_Y$ 我们早就知道，
-他这次考了 $Y$ 分，那么 $Y-\mu_Y$ 就是"这次考题的偏差"，
-把它按比例 $c$ 从目标同学分数里扣掉即可。$c^*=\Cov/\Var$ 只是在问：
-"两人受考题影响的联动有多强，就扣多大比例。"
+考题偏难类比：想估某同学的真实水平（$\E X$），但这次考题整体偏难，
+他考砸了你也不知道是题难还是他菜。怎么办？看一个"参照生"$Y$：
+他的真实水平 $\mu_Y$ 早就知道，这次他考了 $Y$ 分，
+那 $Y-\mu_Y$ 就是"这次考题的偏差"，按比例 $c$ 从目标同学的分数里扣掉。
+$c^*=\Cov/\Var$ 在回答："两人受考题影响的联动有多强，就扣多大比例。"
 \end{pbox}
 
 \begin{exbox}[控制变量法估计 $\int_0^1 e^x\d x$]
 取 $X=e^U$，控制变量 $Y=U$（$\E U=\frac12$ 已知）。
-已知 $\Cov(e^U,U)=1-\frac{e-1}{2}\cdot1\approx0.1409$（即 $\E[Ue^U]-\E U\E e^U=1-(e-1)/2$），
-$\Var U=\frac1{12}$，$\Var e^U\approx0.242$。求 $c^*$ 与方差缩减比。
+已知 $\Cov(e^U,U)\approx0.1409$，$\Var U=\frac1{12}$，$\Var e^U\approx0.242$。
+求 $c^*$ 与方差缩减比。
 \end{exbox}
 \begin{sol}
+\textbf{第一步}（套 $c^*$ 公式）：
 \[
 c^*=\frac{\Cov(e^U,U)}{\Var U}=\frac{0.1409}{1/12}\approx1.69 .
 \]
-相关系数 $\rho=\frac{0.1409}{\sqrt{0.242\times1/12}}\approx0.992$，
+
+\textbf{第二步}（算相关系数）：
+$\rho=\frac{0.1409}{\sqrt{0.242\times1/12}}\approx0.992$——$e^U$ 和 $U$ 几乎是直线关系。
+
+\textbf{第三步}（算缩减后的方差）：
 \[
 \Var X(c^*)=0.242\times(1-0.992^2)\approx0.242\times0.016\approx0.0039 ,
 \]
-缩减约 60 倍。估计量为 $\frac1n\sum\big[e^{U_i}-1.69(U_i-\tfrac12)\big]$。
-直线 $1.69(u-\frac12)+\text{const}$ 把 $e^u$ 拟合得很好，残差自然小。
+缩减约 \textbf{60 倍}。最终估计量写出来是
+$\frac1n\sum\big[e^{U_i}-1.69\,(U_i-\tfrac12)\big]$。
+
+\textbf{为什么这么狠}：直线 $1.69(u-\frac12)$ 把 $e^u$ 的起伏拟合掉了绝大部分，
+剩给随机性的只有小小的残差。
 \end{sol}
 
-\subsection{条件期望法（Rao--Blackwell 化）}
-
-\paragraph{直觉先行。}
-全方差分解：
-\[
-\Var X=\E[\Var(X\mid Y)]+\Var[\E(X\mid Y)] .
-\]
-两项都非负，所以 $\Var[\E(X\mid Y)]\le\Var X$，而 $\E[\E(X\mid Y)]=\E X$（无偏不变）。
-结论：\textbf{凡是能解析地算出来的部分就别模拟}——
-用 $\E(X\mid Y)$ 替代 $X$，把"$Y$ 给定后 $X$ 的随机性"整个消灭掉。
-
 \begin{pbox}
-一句话：\textbf{能用笔算的部分就别抽签了}。估 $\pi$ 的例子里，
-原来要抽两个随机数 $(U,V)$ 看点在不在圆内；但其实 $U$ 定下后，
-"$V$ 落在圆内"的概率精确等于 $\sqrt{1-U^2}$，这一步根本不用抽——直接用公式。
-少抽一次签，少一份随机性，方差自然小。
+对偶法 vs 控制变量法，一句话分清：
+对偶法\textbf{不需要任何额外知识}，只要 $f$ 单调就能用；
+控制变量法要你\textbf{找得到一个期望已知的相关变量}，找得到就往往缩得更狠。
+考试推导题最爱考 $c^*$ 那三行（展开方差 $\to$ 求导置零 $\to$ 代回得 $1-\rho^2$），
+请把它练到闭眼能写。
 \end{pbox}
 
-\begin{exbox}[条件期望法估计 $\pi$]
+\subsection{第三招：条件期望法——能笔算的部分绝不抽签}
+
+\paragraph{困境。}
+前两招都在"事后补救"误差。有没有办法\textbf{从源头少制造随机性}？
+
+\paragraph{灵感。}
+有些估计量里，一部分随机性其实是"白抽的"——给定其他量后，
+这部分的期望能\textbf{解析地}算出来。能笔算的部分就别交给运气。
+理论根据是全方差分解：
+\[
+\Var X=\underbrace{\E[\Var(X\mid Y)]}_{\ge0}+\Var[\E(X\mid Y)]
+\quad\Longrightarrow\quad
+\Var\big[\E(X\mid Y)\big]\le\Var X ,
+\]
+且 $\E[\E(X\mid Y)]=\E X$（无偏性不变）。
+所以用 $g(Y)=\E(X\mid Y)$ 替代 $X$，稳赚不赔。
+
+\begin{exbox}[条件期望法估计 $\pi$（经典例）]
 投点法估 $\pi$：$(U,V)$ 均匀于 $[0,1]^2$，$X=I(U^2+V^2\le1)$，$\E X=\pi/4$。
 用条件期望法改进之。
 \end{exbox}
 \begin{sol}
-对 $U$ 取条件：
+\textbf{第一步}（找出能笔算的部分）：固定 $U$ 之后，"$V$ 落在圆内"的概率不用抽——
 \[
-g(U)=\E[X\mid U]=\Pr(V\le\sqrt{1-U^2}\mid U)=\sqrt{1-U^2}.
+g(U)=\E[X\mid U]=\Pr\big(V\le\sqrt{1-U^2}\,\big)=\sqrt{1-U^2}.
 \]
-改用 $\hat\theta=\frac1n\sum\sqrt{1-U_i^2}$（只需一半随机数！）。
-方差对比：$\Var X=\frac\pi4(1-\frac\pi4)\approx0.169$；
+（$V\sim U(0,1)$，落在 $[0,t]$ 的概率就是 $t$。）
+
+\textbf{第二步}（换估计量）：改用 $\hat\theta=\frac1n\sum\sqrt{1-U_i^2}$，
+随机数用量直接减半。
+
+\textbf{第三步}（算账）：
+$\Var X=\frac\pi4(1-\frac\pi4)\approx0.169$；
 $\Var\sqrt{1-U^2}=\E(1-U^2)-(\pi/4)^2=\frac23-0.617\approx0.0498$。
-缩减约 3.4 倍，且每次抽样成本减半。
+缩减约 3.4 倍，外加每次抽样成本减半。
 \end{sol}
 
-\subsection{重要抽样法（importance sampling）}
+\begin{pbox}
+做题口诀：看到"两层随机性"（先抽 $Y$ 再抽别的），就问自己——
+\textbf{第二层给定第一层后，期望有没有解析式？}有，就把它写出来替掉指示函数/内层随机量。
+本例中指示函数 $I(V\le\sqrt{1-U^2})$ 被换成了光滑函数 $\sqrt{1-U^2}$：
+0/1 跳变的"硬币"换成了连续的"刻度尺"，波动当然小。
+\end{pbox}
 
-\paragraph{直觉先行。}
-$I=\int f(x)\d x$ 中，若 $f$ 只在一小块区域大、其他地方几乎为 0，
-均匀抽样的大部分点都"浪费"在不重要的区域。
-不如按一个密度 $g$（形状接近 $f$）抽样，多去重要区域，再用权重纠偏：
+\subsection{第四招：重要抽样法——把火力对准重要区域}
+
+\paragraph{困境。}
+均匀抽样对 $[0,1]$ 一视同仁。可 $e^x$ 在 $x=1$ 附近接近 $e\approx2.72$、
+在 $0$ 附近只有 $1$——右边对积分的贡献明显更大，均匀撒点等于把一半力气
+花在不太重要的左半边。极端情形（比如尾概率估计，$f$ 在 99\% 的区域几乎为 0）
+均匀抽样几乎全是无用功。
+
+\paragraph{灵感。}
+那就\textbf{不均匀地抽}：按一个自选的密度 $g$（形状接近 $f$）抽样，
+重要区域多去，再用权重纠偏。恒等变形：
 \[
-I=\int\frac{f(x)}{g(x)}\,g(x)\,\d x=\E_g\Big[\frac{f(X)}{g(X)}\Big]
+I=\int f(x)\,\d x=\int\frac{f(x)}{g(x)}\,g(x)\,\d x=\E_g\Big[\frac{f(X)}{g(X)}\Big]
 \quad\Rightarrow\quad
 \hat I=\frac1n\sum_i\frac{f(X_i)}{g(X_i)},\quad X_i\sim g .
 \]
 
 \begin{pbox}
-找鱼类比：湖里的鱼（被积函数的"质量"）集中在东南角，均匀撒网是浪费；
+撒网捕鱼类比：湖里的鱼（被积函数的"质量"）集中在东南角，均匀撒网是浪费；
 聪明的做法是哪里鱼多往哪里多撒网（按 $g$ 抽样）。但多撒了网会高估鱼量，
-所以每网收获要除以"这里撒网的加密倍数"（除以 $g$）来纠偏。
-唯一的雷：有鱼的地方几乎不撒网（$f>0$ 处 $g\approx0$），一旦撞上权重爆炸。
+所以每网的收获要除以"这里撒网的加密倍数"（除以 $g$）来纠偏。
+方差什么时候小？$f/g$ 越接近常数越小——即 $g$ 的形状越像 $f$ 越好。
+\textbf{唯一的雷}：有鱼的地方几乎不撒网（$f>0$ 处 $g\approx0$），
+一旦撞上，权重 $f/g$ 爆炸，方差反而无穷大。所以 $g$ 的尾巴绝不能比 $f$ 轻。
 \end{pbox}
 
-\begin{kbox}{要点}
-\begin{itemize}[leftmargin=2em]
-  \item $g$ 与 $f/I$ 越像，$f/g$ 越接近常数，方差越小（理想极限：$g\propto|f|$ 时方差为 0，但需要知道 $I$，做不到，只能逼近）；
-  \item \textbf{大忌}：$g$ 的尾巴比 $f$ 轻（$f>0$ 处 $g\approx0$），权重 $f/g$ 爆炸，方差反而无穷大。
-\end{itemize}
-\end{kbox}
-
 \begin{exbox}[重要抽样估计 $\int_0^1 e^x\d x$]
-取 $g(x)=\frac{2}{3}(1+x)$（$0\le x\le1$ 上的密度）。写出估计量并说明为何方差小。
+取 $g(x)=\frac{2}{3}(1+x)$（$[0,1]$ 上的密度）。写出估计量并说明为何方差小。
 \end{exbox}
 \begin{sol}
-$g$ 是归一化的 $1+x$：$\int_0^1(1+x)\d x=\frac32$，故 $g=\frac23(1+x)$。
-抽 $X\sim g$（逆变换：$G(x)=\frac23(x+\frac{x^2}2)=u$，解 $x=\sqrt{1+3u}-1$），
+\textbf{第一步}（验证 $g$ 是密度并说明动机）：$\int_0^1(1+x)\d x=\frac32$，
+归一化得 $g=\frac23(1+x)$。选它是因为 $e^x\approx1+x$（泰勒展开），形状像。
+
+\textbf{第二步}（怎么从 $g$ 抽样）：逆变换法（第 1 章！）：
+$G(x)=\frac23\big(x+\frac{x^2}2\big)=u$，解得 $x=\sqrt{1+3u}-1$。
+
+\textbf{第三步}（写出估计量）：
 \[
-\hat I=\frac1n\sum_i\frac{e^{X_i}}{\frac23(1+X_i)}.
+\hat I=\frac1n\sum_i\frac{e^{X_i}}{\frac23(1+X_i)} .
 \]
-因为 $e^x\approx1+x$（泰勒展开），比值 $\frac{e^x}{1+x}$ 在 $[0,1]$ 上仅在
-$[1,\,e/2\approx1.36]$ 间变化，远比 $e^x\in[1,e]$ 平稳，方差显著小于朴素平均值法。
+
+\textbf{第四步}（说明方差小）：比值 $\frac{e^x}{1+x}$ 在 $[0,1]$ 上只在
+$[1,\ e/2\approx1.36]$ 间变化，远比原函数 $e^x\in[1,\,2.72]$ 平稳——
+"被平均的东西"波动小了，方差自然小。
 \end{sol}
 
-\subsection{分层抽样法（stratified sampling）}
+\subsection{第五招：分层抽样法——先分格子再撒点}
 
-\paragraph{直觉先行。}
-全国调查收入，纯随机抽样可能恰好多抽了富人——不如\textbf{先分层、层内定额}：
-每层抽固定数量，层间差异（方差的"between"部分）被彻底消灭，只剩层内方差。
+\paragraph{困境。}
+均匀抽样还有个毛病：纯随机的点可能\textbf{凑巧扎堆}——$n=10$ 个点全落在左半边
+也不是不可能，那这次估计就偏得离谱。
 
-\begin{ebox}{操作（等分层为例）}
+\paragraph{灵感。}
+不让运气决定布局：把 $[0,1]$ 先切成 $m$ 段（层），\textbf{每层强制分配定额}的点。
+"点扎堆"这件事被制度性消灭了。
+
+\begin{ebox}{分层抽样（等分层为例）}
 把 $[0,1]$ 切成 $m$ 段，第 $j$ 段抽 $n_j$ 个均匀点（$\sum n_j=n$），
 \[
 \hat I=\sum_{j=1}^m\frac{1}{m}\cdot\frac{1}{n_j}\sum_{i=1}^{n_j}f\big(X_{ij}\big),
 \qquad X_{ij}\sim U\big(\tfrac{j-1}{m},\tfrac{j}{m}\big).
 \]
-由全方差分解，分层（按比例分配）后方差 $\le$ 简单随机抽样的方差；
-按"层标准差大的多抽"（Neyman 分配）还能更优。
+由全方差分解，分层（按比例分配）后的方差 $\le$ 简单随机抽样；
+"层标准差大的层多抽"（Neyman 分配）还能更优。
 \end{ebox}
+
+\begin{pbox}
+和条件期望法是亲戚：全方差分解 $\Var=\text{层内}+\text{层间}$，
+分层抽样把\textbf{层间方差}（"这次点都落在哪个层"的运气成分）整个清零，
+只剩层内的小波动。类比全国收入调查：纯随机可能恰好多抽了富人区，
+分层定额（每省固定抽多少人）就不会。
+\end{pbox}
 
 \begin{exbox}[分层抽样的效果]
 估计 $I=\int_0^1x\,\d x$。把 $[0,1]$ 等分两层各抽 $n/2$ 个点，与不分层（$n$ 个点）比较方差。
 \end{exbox}
 \begin{sol}
-不分层：$\Var=\frac{\Var U}{n}=\frac{1/12}{n}$。
+\textbf{第一步}（基准线）：不分层 $\Var=\frac{\Var U}{n}=\frac{1/12}{n}$。
 
-分层：每层是宽 $\frac12$ 的均匀分布，层内方差 $\frac{(1/2)^2}{12}=\frac1{48}$。
+\textbf{第二步}（层内方差）：每层是宽 $\frac12$ 的均匀分布，
+方差 $=\frac{(1/2)^2}{12}=\frac1{48}$。
+
+\textbf{第三步}（合成）：两层各占权重 $\frac12$，
 \[
-\Var(\hat I)=\frac14\Big(\frac{1/48}{n/2}+\frac{1/48}{n/2}\Big)=\frac{1}{48n}.
+\Var(\hat I)=\Big(\frac12\Big)^2\frac{1/48}{n/2}+\Big(\frac12\Big)^2\frac{1/48}{n/2}
+=\frac{1}{48n}.
 \]
-缩减比 $\frac{1/12}{1/48}=4$ 倍。直觉：$f(x)=x$ 的差异主要在"层间"（左半小右半大），
-分层把这部分方差直接清零。
+缩减比 $\frac{1/12}{1/48}=\textbf{4 倍}$。
+直觉：$f(x)=x$ 的差异主要是"左半小、右半大"这个层间差异，分层把它直接清零。
 \end{sol}
 
-\subsection{公共随机数法（common random numbers）}
+\subsection{第六招：公共随机数法——比较问题的专用招}
 
-场景不同于前面：\textbf{比较}两个系统 $\theta_1-\theta_2$。
+最后这招的\textbf{场景不同}：不是估一个量，而是\textbf{比较}两个系统，估 $\theta_1-\theta_2$
+（比如两种排队策略谁的平均等待短）。这时
 \[
 \Var(X-Y)=\Var X+\Var Y-2\Cov(X,Y),
 \]
-让两个系统用\textbf{同一串随机数}模拟，制造\textbf{正}相关，差的方差就小——
-"同一套考题考两个学生，分差更能反映真实水平"。
-（注意与对偶变量法相反：比较问题要正相关，求和/平均问题要负相关。）
+想让差的方差小，要 $\Cov$ 是\textbf{正}的、越大越好——
+办法是让两个系统用\textbf{同一串随机数}模拟。
+
+\begin{pbox}
+同一套考题考两个学生，分差才反映真实水平差；各考各的题，
+分差里混入了"题目难度不同"的噪声。注意方向别记反：
+\textbf{求和/平均}问题（对偶法）要制造\textbf{负}相关；
+\textbf{相减/比较}问题（公共随机数）要制造\textbf{正}相关。
+公式里看符号就懂：和的方差带 $+2\Cov$，差的方差带 $-2\Cov$。
+\end{pbox}
+
+\subsection{全章回看：一张决策表}
+
+六种方法各打一个痛点，做题先认"题型签名"：
+
+\begin{kbox}{方法选择决策表}
+\begin{itemize}[leftmargin=2em]
+  \item 题面给出 $\Cov(f(U),f(1-U))<0$ 或强调 $f$ 单调 $\Rightarrow$ \textbf{对偶变量法}（搭档反着错）；
+  \item 题面给出一个\textbf{期望已知}的相关变量 $Y$ $\Rightarrow$ \textbf{控制变量法}（参照物纠偏，$c^*=\Cov/\Var Y$）；
+  \item 估计量里有\textbf{给定一部分后能解析算期望}的结构 $\Rightarrow$ \textbf{条件期望法}（能笔算就不抽签）；
+  \item $f$ 集中在小区域/尾概率问题，且题面给了备选密度 $g$ $\Rightarrow$ \textbf{重要抽样}（火力对准重要区域，注意尾部陷阱）；
+  \item 题面说"把区间分成若干段" $\Rightarrow$ \textbf{分层抽样}（消灭层间方差）；
+  \item 题面是\textbf{比较两个系统} $\Rightarrow$ \textbf{公共随机数}（同卷同考，正相关）。
+\end{itemize}
+\end{kbox}
 
 \subsection{本章考点地图}
 
 \begin{ebox}{高频题型清单}
 \begin{enumerate}[leftmargin=2em]
   \item \textbf{证明平均值法优于投点法}（$f^2\le f$ 三行证明，必考）；
-  \item \textbf{对偶变量法}：写估计量+用 $\Cov<0$ 说明方差缩减；给数值算缩减比；
-  \item \textbf{控制变量法}：推导 $c^*=\Cov/\Var$ 与 $\Var_{\min}=\Var X(1-\rho^2)$（高频大题）；
-  \item \textbf{条件期望法}：全方差分解一行定理+构造 $\E(X\mid Y)$（如 $\sqrt{1-U^2}$ 估 $\pi$）；
-  \item \textbf{重要抽样}：写加权估计量、说明 $g$ 的选取原则与尾部陷阱；
-  \item \textbf{方法匹配概念题}：每种方法各自的适用场景与直觉一句话。
+  \item \textbf{对偶变量法}：写估计量 $\to$ 代 $\Var\big(\frac{X+Y}2\big)$ 公式 $\to$ 算缩减比（数据题面会给）；
+  \item \textbf{控制变量法}：推导 $c^*=\Cov/\Var$ 与 $\Var_{\min}=\Var X(1-\rho^2)$（高频大题，三行推导背熟）；
+  \item \textbf{条件期望法}：全方差分解一行定理 + 构造 $\E(X\mid Y)$（如 $\sqrt{1-U^2}$ 估 $\pi$）；
+  \item \textbf{重要抽样}：写加权估计量、说明 $g$ 的选取原则（像 $f$、尾巴不能轻）；
+  \item \textbf{方法匹配概念题}：用上面的决策表对号入座，每法一句话直觉。
 \end{enumerate}
 \end{ebox}
